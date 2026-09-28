@@ -60,6 +60,8 @@ col = mix(A, B, mm) + glow · exp(−((k − .5)/2.2w)²)</pre>
       <p class="small"><b>Surfaces:</b> procedural concrete and paper textures (value noise, specks, scratches) drive roughness and bump, so raking light finds texture. <b>Film:</b> luminance-weighted grain, sparse dust specks, a rare scratch and a sub-pixel gate weave, all applied after motion blur so they don’t average away. <b>Signal:</b> chromatic aberration that widens during the build, and glitch slices on the CODE hits.</p>
       <h3 style="margin-top:3mm">Type as geometry</h3>
       <p class="small">Glyph outlines come straight from the font files via opentype.js, are unioned with a polygon clipper, then extruded with a bevel. Faces and sides take different materials.</p>
+      <h3 style="margin-top:3mm">Built for 4K</h3>
+      <p class="small">The first 4K test showed that film effects written in device pixels don’t scale: grain striped where its hash ran out of float precision, dust quadrupled, and bloom and matte edges tightened. The finish now works in 1920×1080 design pixels, bloom and matte softness keep their reach relative to the frame, and text textures are sized to the output. Downscaled to 1080p, a 4K frame differs from a native 1080p render by under 2 grey levels on average.</p>
     </div>
   </div>
   <div class="folio">21</div>

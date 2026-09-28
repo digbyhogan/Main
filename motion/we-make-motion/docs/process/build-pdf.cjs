@@ -144,7 +144,9 @@ function spectroLabels() {
 }
 
 const OUT3 = path.join(ROOT, '..', 'we-make-motion-3d', 'render', 'out'), IMG3 = path.join(DOC, 'img3');
-const frame3 = t => fromVideo(path.join(ROOT, '..', 'we-make-motion-3d', 'we-make-motion-3d-4k.mp4'), t + 0.5 / 60, '3d');
+// the document's 3D frames come from the full-quality render (the -4k file is its smaller delivery encode)
+const MASTER3 = ['we-make-motion-3d-4k-master.mp4', 'we-make-motion-3d-4k.mp4'].map(f => path.join(ROOT, '..', 'we-make-motion-3d', f)).find(f => fs.existsSync(f));
+const frame3 = t => fromVideo(MASTER3, t + 0.5 / 60, '3d');
 function images3() {
   fs.mkdirSync(IMG3, { recursive: true });
   for (const t of [4.4, 11.0, 13.2, 16.9, 23.2]) ff(['-i', frame3(t), '-vf', 'scale=1280:-1', '-q:v', '3', path.join(IMG3, `f-${t.toFixed(2)}.jpg`)]);
