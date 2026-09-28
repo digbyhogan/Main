@@ -252,7 +252,7 @@ const CUE = {
   dotPop: 0.15, launch: 0.45,
   bounces: [1.0, 1.5, 1.75, 1.875, 1.9375],
   split1: 2.25, split2: 2.5, burst: 2.75, weLock: 4.0,
-  weSquash: 5.5, weLaunch: 5.625,
+  weSquash: 5.5, weLaunch: 5.625, wipe1: 5.62,
   grid: 6.0, make: [6.5, 7.0, 7.5, 8.0], dotInA: [7.25, 7.375, 7.4375],
   hop: 8.5, hopLand: 9.0, lineOut: 9.25, retract: 9.5, iris: 9.7,
   motion: 10.0, letterLand: [10.75, 10.875, 11.0, 11.125, 11.25, 11.375],
@@ -261,15 +261,15 @@ const CUE = {
   code: 18.0, locks: [19.0, 19.25, 19.5, 19.75], slash: 20.0, fall: 20.25,
   straighten: 21.5, wipe2: 21.7,
   final: [22.0, 22.5, 23.0, 23.5, 24.0], finalBounces: [24.5, 25.0, 25.25, 25.375, 25.4375],
-  reflow: 26.0, asterisk: 27.25, typeStart: 27.6, fadeOut: 29.0, blink: 29.75,
+  reflow: 26.0, curtain: 26.2, asterisk: 27.25, typeStart: 27.6, fadeOut: 29.0, blink: 29.75,
 };
 
-// Camera impacts: [time, strength]. Drives shake and zoom punches.
+// Camera impacts: [time, strength], read from the cue sheet. Drives shake and zoom punches.
 const IMPACTS = [
-  [1.0, 0.55], [1.5, 0.3], [4.0, 0.7], [6.5, 0.25], [7.0, 0.25], [7.5, 0.25], [8.0, 0.35],
-  [10.0, 0.6], [12.0, 1.0], [14.0, 0.3], [14.5, 0.35], [15.0, 0.4], [15.5, 0.5],
-  [18.0, 0.9], [20.0, 1.0], [22.0, 0.4], [22.5, 0.4], [23.0, 0.8], [24.0, 0.5], [24.5, 0.45],
-  [27.25, 0.25],
+  [CUE.bounces[0], 0.55], [CUE.bounces[1], 0.3], [CUE.weLock, 0.7], ...CUE.make.map((t, i) => [t, i < 3 ? 0.25 : 0.35]),
+  [CUE.motion, 0.6], [CUE.slam, 1.0], ...[0.3, 0.35, 0.4, 0.5].map((s, i) => [CUE.build + i * BEAT, s]),
+  [CUE.code, 0.9], [CUE.slash, 1.0], ...[0.4, 0.4, 0.8].map((s, i) => [CUE.final[i], s]), [CUE.final[4], 0.5], [CUE.finalBounces[0], 0.45],
+  [CUE.asterisk, 0.25],
 ];
 function camera(t) {
   let e = 0, z = 0;
@@ -578,7 +578,7 @@ function sceneWe(g, t) {
     });
   }
   g.restore();
-  liquidWipe(g, seg(t, 5.62, 6.0), COL.chalk, 1);
+  liquidWipe(g, seg(t, CUE.wipe1, CUE.grid), COL.chalk, 1);
 }
 
 // ═══ C · MAKE (6 – 10s) ══════════════════════════════════════════
@@ -595,8 +595,8 @@ const MK = {
 };
 // stroke list: [points, start, duration, letterIndex]
 MK.strokes = [
-  [MK.M, 6.5, 0.42, 0], [MK.A, 7.0, 0.36, 1], [MK.Ks, 7.5, 0.22, 2],
-  [MK.Ka, 7.56, 0.3, 2], [MK.Eb, 8.0, 0.36, 3],
+  [MK.M, CUE.make[0], 0.42, 0], [MK.A, CUE.make[1], 0.36, 1], [MK.Ks, CUE.make[2], 0.22, 2],
+  [MK.Ka, CUE.make[2] + 0.06, 0.3, 2], [MK.Eb, CUE.make[3], 0.36, 3],
 ];
 const MAKE_DOT_R = 24;
 
@@ -670,7 +670,7 @@ function sceneMake(g, t) {
     g.restore();
   });
   // E's middle bar: draws on, then becomes the horizon
-  const mOn = Ez.outQuart(seg(t, 8.1, 8.32));
+  const mOn = Ez.outQuart(seg(t, CUE.make[3] + 0.1, CUE.make[3] + 0.32));
   const ext = Ez.outExpo(seg(t, CUE.lineOut, 9.65));
   const x0 = lerp(1489, -150, ext), x1 = lerp(1489 + (1650 - 1489) * mOn, W + 150, ext);
   const irisR = 2300 * Ez.inOutQuart(seg(t, CUE.iris, 10.0));
@@ -1038,14 +1038,14 @@ function sceneCode(g, t) {
     if (grow <= 0) g.fillRect(-full / 2, -thick / 2, full * sp, thick);
     else { const half = lerp(full / 2, W * 1.3, grow); g.fillRect(-half, -thick / 2, half * 2, thick); }
     g.restore();
-    const u = Ez.inOutExpo(seg(t, 21.8, 22.0)) * 1400;
+    const u = Ez.inOutExpo(seg(t, CUE.wipe2 + 0.1, CUE.final[0])) * 1400;
     if (u > 0) { g.fillStyle = COL.ultra; g.fillRect(-200, CY - u / 2, W + 400, u); }
   }
 }
 
 // ═══ G · THE CLAIM (22 – 26s)  &  H · THE FINE PRINT (26 – 30s) ═══
 const FN = {};
-const FOOTNOTE = '*Except this one. This one is 1,857 lines of code.';
+const FOOTNOTE = '*Except this one. This one is 1,858 lines of code.';
 onPrep(() => {
   const L1 = F.disp(150), mw = textW(F.disp(100), 'MOTION');
   const ms = Math.min(310, (1620 / mw) * 100);
@@ -1123,7 +1123,7 @@ function drawWordIn(g, w, i, t) {
 
 function sceneFinale(g, t) {
   bg(g, COL.ultra);
-  liquidWipe(g, seg(t, 26.2, 26.85), COL.ink, -1);
+  liquidWipe(g, seg(t, CUE.curtain, CUE.curtain + 0.65), COL.ink, -1);
   const out = 1 - seg(t, CUE.fadeOut + 0.25, CUE.fadeOut + 0.6);
 
   if (t < CUE.reflow) {
@@ -1210,7 +1210,7 @@ function hud(g, t) {
 }
 
 // ═══ Compositor ══════════════════════════════════════════════════
-const GLITCH = [[18.0, 0.22, 1], [20.0, 0.14, 0.8], [20.55, 0.3, 0.5], [24.0, 0.1, 0.35]];
+const GLITCH = [[CUE.code, 0.22, 1], [CUE.slash, 0.14, 0.8], [CUE.slash + 0.55, 0.3, 0.5], [CUE.final[4], 0.1, 0.35]];
 function glitchAmt(t) {
   let a = 0;
   for (const [s, d, k] of GLITCH) if (t >= s && t < s + d) a = Math.max(a, k * (1 - (t - s) / d));
@@ -1509,6 +1509,7 @@ function air(M, t, dur, { gain = 0.05 } = {}) {
 
 // ─── the score ───────────────────────────────────────────────────
 const NOTE = { C5: 523.25, D5: 587.33, E5: 659.26, G5: 783.99, A5: 880, C6: 1046.5, D6: 1174.7, E6: 1318.5, G6: 1568, A6: 1760 };
+const at = x => Math.round(x * 1e6) / 1e6; // derived cue times, snapped so float error can't move a sample
 const range = (a, b, step) => { const o = []; for (let x = a; x < b - 1e-6; x += step) o.push(+x.toFixed(4)); return o; };
 
 function score(M) {
@@ -1539,8 +1540,8 @@ function score(M) {
   [4.5, 5.0].forEach(x => kick(M, x, { gain: 0.8 }));
   [4.5, 5.5].forEach(x => snare(M, x, { gain: 0.45 }));
   range(4.25, 5.5, 0.5).forEach(x => hat(M, x, { gain: 0.12 }));
-  whoosh(M, 5.55, 0.45, { f0: 400, f1: 5000, gain: 0.32, pan0: 0, pan1: 0 });
-  kick(M, 6.0, { gain: 0.9, f0: 120, f1: 40 });
+  whoosh(M, at(CUE.wipe1 - 0.07), 0.45, { f0: 400, f1: 5000, gain: 0.32, pan0: 0, pan1: 0 });
+  kick(M, CUE.grid, { gain: 0.9, f0: 120, f1: 40 });
 
   // C · MAKE
   range(6.0, 6.5, 0.125).forEach((x, i) => hat(M, x, { gain: 0.06 + i * 0.03 }));
@@ -1603,12 +1604,12 @@ function score(M) {
   kick(M, CUE.slash, { gain: 1 }); clap(M, CUE.slash, { gain: 0.55 }); impact(M, CUE.slash, { gain: 0.6 });
   glitchBurst(M, CUE.slash, 0.14, { gain: 0.2, seed: 9 });
   for (let i = 0; i < 7; i++) sweep(M, CUE.fall + i * 0.06, 0.4, { f0: 900 - i * 70, f1: 110, gain: 0.1, pan: -0.6 + i * 0.2, type: 'triangle' });
-  glitchBurst(M, 20.55, 0.3, { gain: 0.16, seed: 21 });
+  glitchBurst(M, at(CUE.slash + 0.55), 0.3, { gain: 0.16, seed: 21 });
   kick(M, 21.0, { gain: 0.6 });
   sweep(M, 21.1, 0.4, { f0: 380, f1: 360, gain: 0.05, type: 'triangle' });
   tick(M, CUE.straighten, { gain: 0.14, freq: 2400 });
-  whoosh(M, 21.62, 0.3, { f0: 500, f1: 5000, gain: 0.3, pan0: -0.5, pan1: 0.2 });
-  whoosh(M, 21.72, 0.3, { f0: 400, f1: 4000, gain: 0.26, pan0: 0.5, pan1: -0.2 });
+  whoosh(M, at(CUE.wipe2 - 0.08), 0.3, { f0: 500, f1: 5000, gain: 0.3, pan0: -0.5, pan1: 0.2 });
+  whoosh(M, at(CUE.wipe2 + 0.02), 0.3, { f0: 400, f1: 4000, gain: 0.26, pan0: 0.5, pan1: -0.2 });
 
   // G · the claim
   CUE.final.forEach((x, i) => kick(M, x, { gain: i === 2 ? 1 : 0.85 }));
@@ -1626,7 +1627,7 @@ function score(M) {
   // H · the fine print
   whoosh(M, CUE.reflow, 0.8, { f0: 3500, f1: 400, gain: 0.2, pan0: 0.4, pan1: -0.4 });
   kick(M, CUE.reflow, { gain: 0.7 });
-  sweep(M, 26.2, 0.7, { f0: 80, f1: 40, gain: 0.2, rev: 0 });
+  sweep(M, CUE.curtain, 0.7, { f0: 80, f1: 40, gain: 0.2, rev: 0 });
   sproing(M, CUE.asterisk);
   blip(M, CUE.asterisk, { freq: NOTE.G6, gain: 0.12, rev: 0.4 });
   for (let i = 1; i < FN.note.length; i++) {
@@ -1666,7 +1667,7 @@ function wavBytes(buf) {
 const SCENES = [
   { t: 0, mark: 'Drop', name: 'The drop', motion: 'A dot pops in, crouches, jumps and falls. Stretched by speed, flattened by impact, volume kept.', sound: 'The bounces halve in length (0.5, 0.25, 0.125 s), so the ball plays its own drum fill.' },
   { t: 2, mark: 'We', name: 'WE', motion: 'Mitosis: 1 → 2 → 4 → about a thousand particles, curving home in a left-to-right stagger.', sound: 'A pluck per split, a sparkle of pentatonic blips, snare and clap on the lock.' },
-  { t: 6, mark: 'Make', name: 'MAKE', motion: 'A monoline alphabet drawn one letter per beat on a construction grid. The dot clears the K by a pixel.', sound: 'Woodblock clacks tuned upward, one per glyph.' },
+  { t: 6, mark: 'Make', name: 'MAKE', motion: 'A monoline alphabet drawn one letter per beat on a construction grid. The dot clears the K by a hair.', sound: 'Woodblock clacks tuned upward, one per glyph.' },
   { t: 10, mark: 'Motion', name: 'MOTION', motion: 'Letters ride a travelling sine wave and turn with its tangent. Then a marquee accelerates and collapses to a line.', sound: 'Full groove, an arpeggio as the letters land, a snare roll from 8ths to 32nds, a tape stop.' },
   { t: 16, mark: 'Without', name: 'without', motion: 'Stillness. A serif whisper after the shout. The dot becomes the tittle of the i, and we zoom into the ink of the o.', sound: 'One glass ping, some air, a riser into the cut.' },
   { t: 18, mark: 'Code', name: 'CODE', motion: 'Decoded one letter per eighth note, struck through, dropped. The bar hangs for a beat before it notices.', sound: 'Bit-crushed hats, square-wave locks, a slash, falling bloops.' },
@@ -1685,7 +1686,7 @@ const PRINCIPLES = [
   [6.0, 6.5, 'Staging', 'The grid sets up the space before the action lands in it.'],
   [6.5, 8.4, 'Rhythm', 'One glyph per beat, drawn like a pen stroke.'],
   [7.25, 7.5, 'Follow-through', 'The dot settles with two shrinking bounces.'],
-  [8.3, 9.1, 'Appeal', 'A character hop that clears the K by a pixel.'],
+  [8.3, 9.1, 'Appeal', 'A character hop that clears the K by a hair.'],
   [9.25, 10.0, 'Match cut', "The E's crossbar becomes the horizon."],
   [10.0, 11.65, 'Arcs & path animation', 'Letters ride the wave and turn with its tangent.'],
   [11.65, 12.0, 'Overlapping action', 'Each letter settles on its own timing.'],

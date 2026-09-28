@@ -191,6 +191,7 @@ function air(M, t, dur, { gain = 0.05 } = {}) {
 
 // ─── the score ───────────────────────────────────────────────────
 const NOTE = { C5: 523.25, D5: 587.33, E5: 659.26, G5: 783.99, A5: 880, C6: 1046.5, D6: 1174.7, E6: 1318.5, G6: 1568, A6: 1760 };
+const at = x => Math.round(x * 1e6) / 1e6; // derived cue times, snapped so float error can't move a sample
 const range = (a, b, step) => { const o = []; for (let x = a; x < b - 1e-6; x += step) o.push(+x.toFixed(4)); return o; };
 
 function score(M) {
@@ -221,8 +222,8 @@ function score(M) {
   [4.5, 5.0].forEach(x => kick(M, x, { gain: 0.8 }));
   [4.5, 5.5].forEach(x => snare(M, x, { gain: 0.45 }));
   range(4.25, 5.5, 0.5).forEach(x => hat(M, x, { gain: 0.12 }));
-  whoosh(M, 5.55, 0.45, { f0: 400, f1: 5000, gain: 0.32, pan0: 0, pan1: 0 });
-  kick(M, 6.0, { gain: 0.9, f0: 120, f1: 40 });
+  whoosh(M, at(CUE.wipe1 - 0.07), 0.45, { f0: 400, f1: 5000, gain: 0.32, pan0: 0, pan1: 0 });
+  kick(M, CUE.grid, { gain: 0.9, f0: 120, f1: 40 });
 
   // C · MAKE
   range(6.0, 6.5, 0.125).forEach((x, i) => hat(M, x, { gain: 0.06 + i * 0.03 }));
@@ -285,12 +286,12 @@ function score(M) {
   kick(M, CUE.slash, { gain: 1 }); clap(M, CUE.slash, { gain: 0.55 }); impact(M, CUE.slash, { gain: 0.6 });
   glitchBurst(M, CUE.slash, 0.14, { gain: 0.2, seed: 9 });
   for (let i = 0; i < 7; i++) sweep(M, CUE.fall + i * 0.06, 0.4, { f0: 900 - i * 70, f1: 110, gain: 0.1, pan: -0.6 + i * 0.2, type: 'triangle' });
-  glitchBurst(M, 20.55, 0.3, { gain: 0.16, seed: 21 });
+  glitchBurst(M, at(CUE.slash + 0.55), 0.3, { gain: 0.16, seed: 21 });
   kick(M, 21.0, { gain: 0.6 });
   sweep(M, 21.1, 0.4, { f0: 380, f1: 360, gain: 0.05, type: 'triangle' });
   tick(M, CUE.straighten, { gain: 0.14, freq: 2400 });
-  whoosh(M, 21.62, 0.3, { f0: 500, f1: 5000, gain: 0.3, pan0: -0.5, pan1: 0.2 });
-  whoosh(M, 21.72, 0.3, { f0: 400, f1: 4000, gain: 0.26, pan0: 0.5, pan1: -0.2 });
+  whoosh(M, at(CUE.wipe2 - 0.08), 0.3, { f0: 500, f1: 5000, gain: 0.3, pan0: -0.5, pan1: 0.2 });
+  whoosh(M, at(CUE.wipe2 + 0.02), 0.3, { f0: 400, f1: 4000, gain: 0.26, pan0: 0.5, pan1: -0.2 });
 
   // G · the claim
   CUE.final.forEach((x, i) => kick(M, x, { gain: i === 2 ? 1 : 0.85 }));
@@ -308,7 +309,7 @@ function score(M) {
   // H · the fine print
   whoosh(M, CUE.reflow, 0.8, { f0: 3500, f1: 400, gain: 0.2, pan0: 0.4, pan1: -0.4 });
   kick(M, CUE.reflow, { gain: 0.7 });
-  sweep(M, 26.2, 0.7, { f0: 80, f1: 40, gain: 0.2, rev: 0 });
+  sweep(M, CUE.curtain, 0.7, { f0: 80, f1: 40, gain: 0.2, rev: 0 });
   sproing(M, CUE.asterisk);
   blip(M, CUE.asterisk, { freq: NOTE.G6, gain: 0.12, rev: 0.4 });
   for (let i = 1; i < FN.note.length; i++) {

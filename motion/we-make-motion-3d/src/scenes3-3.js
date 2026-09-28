@@ -117,13 +117,13 @@ function updateClaim(t, inkMode) {
 const view = (w) => ({ scene: w.s, cam: w.cam });
 function shot(t) {
   const base = { bloom: 0.55, exposure: 1.0, ca: 0.0022, vig: 0.4, glitch: glitchAmt(t) * 0.8, gSeed: Math.floor(t * 30), seed: t * 0.7, grain: 0.05, dust: 0.6 };
-  if (t < 5.62) {
+  if (t < CUE.wipe1) {
     updateDark(t);
     return Object.assign(base, { a: view(S3.dark), bloom: 0.7, dust: 0.9 });
   }
-  if (t < 6.0) {
+  if (t < CUE.grid) {
     updateDark(t); updateMake(t);
-    return Object.assign(base, { a: view(S3.dark), b: view(S3.make), maskDraw: g => liquidWipe(g, seg(t, 5.62, 6.0), '#fff', 1), edgeGlow: [3.2, 2.2, 0.7], edgeW: 0.06, soft: 2 });
+    return Object.assign(base, { a: view(S3.dark), b: view(S3.make), maskDraw: g => liquidWipe(g, seg(t, CUE.wipe1, CUE.grid), '#fff', 1), edgeGlow: [3.2, 2.2, 0.7], edgeW: 0.06, soft: 2 });
   }
   if (t < 9.7) { updateMake(t); return Object.assign(base, { a: view(S3.make), bloom: 0.45, dust: 0.35, vig: 0.3 }); }
   if (t < 10.0) {
@@ -142,19 +142,19 @@ function shot(t) {
     updateWithout(t); updateCode(t);
     return Object.assign(base, { a: view(S3.without), b: view(S3.code), mask: { scene: S3.without.mask, cam: S3.without.cam }, soft: 1, edgeW: 0.05, edgeNoise: 0.7, edgeGlow: [5, 1.4, 2.4], dust: 0.3 });
   }
-  if (t < 21.8) { updateCode(t); return Object.assign(base, { a: view(S3.code), bloom: 0.7, dust: 0.9 }); }
+  if (t < CUE.wipe2 + 0.1) { updateCode(t); return Object.assign(base, { a: view(S3.code), bloom: 0.7, dust: 0.9 }); }
   if (t < 22) {
     updateCode(t); updateClaim(t, false);
-    const u = Ez.inOutExpo(seg(t, 21.8, 22.0)) * 1400;
+    const u = Ez.inOutExpo(seg(t, CUE.wipe2 + 0.1, CUE.final[0])) * 1400;
     return Object.assign(base, { a: view(S3.code), b: view(S3.claim), edgeGlow: [1, 1, 5], edgeW: 0.05, soft: 2, maskDraw: g => { g.fillStyle = '#fff'; g.fillRect(-200, CY - u / 2, W + 400, u); } });
   }
   const cl = view(S3.claim);
-  if (t >= 26.2 && t < 26.85) {
+  if (t >= CUE.curtain && t < CUE.curtain + 0.65) {
     return Object.assign(base, { a: Object.assign({}, cl, { pre: () => updateClaim(t, false) }), b: Object.assign({}, cl, { pre: () => updateClaim(t, true) }),
-      maskDraw: g => liquidWipe(g, seg(t, 26.2, 26.85), '#fff', -1), edgeGlow: [4, 1.2, 2], edgeW: 0.06, soft: 2 });
+      maskDraw: g => liquidWipe(g, seg(t, CUE.curtain, CUE.curtain + 0.65), '#fff', -1), edgeGlow: [4, 1.2, 2], edgeW: 0.06, soft: 2 });
   }
-  updateClaim(t, t >= 26.85);
-  return Object.assign(base, { a: Object.assign({}, cl), bloom: t >= 26.85 ? 0.75 : 0.55, dust: t >= 26.85 ? 0.8 : 0.5 });
+  updateClaim(t, t >= CUE.curtain + 0.65);
+  return Object.assign(base, { a: Object.assign({}, cl), bloom: t >= CUE.curtain + 0.65 ? 0.75 : 0.55, dust: t >= CUE.curtain + 0.65 ? 0.8 : 0.5 });
 }
 
 // ═══ Frame loop ═════════════════════════════════════════════════

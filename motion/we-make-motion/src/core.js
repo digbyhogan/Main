@@ -108,7 +108,7 @@ const CUE = {
   dotPop: 0.15, launch: 0.45,
   bounces: [1.0, 1.5, 1.75, 1.875, 1.9375],
   split1: 2.25, split2: 2.5, burst: 2.75, weLock: 4.0,
-  weSquash: 5.5, weLaunch: 5.625,
+  weSquash: 5.5, weLaunch: 5.625, wipe1: 5.62,
   grid: 6.0, make: [6.5, 7.0, 7.5, 8.0], dotInA: [7.25, 7.375, 7.4375],
   hop: 8.5, hopLand: 9.0, lineOut: 9.25, retract: 9.5, iris: 9.7,
   motion: 10.0, letterLand: [10.75, 10.875, 11.0, 11.125, 11.25, 11.375],
@@ -117,15 +117,15 @@ const CUE = {
   code: 18.0, locks: [19.0, 19.25, 19.5, 19.75], slash: 20.0, fall: 20.25,
   straighten: 21.5, wipe2: 21.7,
   final: [22.0, 22.5, 23.0, 23.5, 24.0], finalBounces: [24.5, 25.0, 25.25, 25.375, 25.4375],
-  reflow: 26.0, asterisk: 27.25, typeStart: 27.6, fadeOut: 29.0, blink: 29.75,
+  reflow: 26.0, curtain: 26.2, asterisk: 27.25, typeStart: 27.6, fadeOut: 29.0, blink: 29.75,
 };
 
-// Camera impacts: [time, strength]. Drives shake and zoom punches.
+// Camera impacts: [time, strength], read from the cue sheet. Drives shake and zoom punches.
 const IMPACTS = [
-  [1.0, 0.55], [1.5, 0.3], [4.0, 0.7], [6.5, 0.25], [7.0, 0.25], [7.5, 0.25], [8.0, 0.35],
-  [10.0, 0.6], [12.0, 1.0], [14.0, 0.3], [14.5, 0.35], [15.0, 0.4], [15.5, 0.5],
-  [18.0, 0.9], [20.0, 1.0], [22.0, 0.4], [22.5, 0.4], [23.0, 0.8], [24.0, 0.5], [24.5, 0.45],
-  [27.25, 0.25],
+  [CUE.bounces[0], 0.55], [CUE.bounces[1], 0.3], [CUE.weLock, 0.7], ...CUE.make.map((t, i) => [t, i < 3 ? 0.25 : 0.35]),
+  [CUE.motion, 0.6], [CUE.slam, 1.0], ...[0.3, 0.35, 0.4, 0.5].map((s, i) => [CUE.build + i * BEAT, s]),
+  [CUE.code, 0.9], [CUE.slash, 1.0], ...[0.4, 0.4, 0.8].map((s, i) => [CUE.final[i], s]), [CUE.final[4], 0.5], [CUE.finalBounces[0], 0.45],
+  [CUE.asterisk, 0.25],
 ];
 function camera(t) {
   let e = 0, z = 0;

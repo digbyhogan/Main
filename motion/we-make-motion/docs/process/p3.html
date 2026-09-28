@@ -10,7 +10,7 @@
       <tr><td class="m">01 Toolchain</td><td>Found headless Chromium and Playwright in the environment. Installed an ffmpeg build with x264 and AAC. Downloaded the three typefaces so offline renders lay out identically to the browser.</td></tr>
       <tr><td class="m">02 Engine</td><td>Wrote the core: frame and tempo constants, the palette, easing library, analytic spring, keyframed ballistics, hash noise, the cue sheet, the camera-impact list, and glyph analysis (rasterise, distance transform, flood fill).</td></tr>
       <tr><td class="m">03 Scenes</td><td>Built the eight scenes in three passes (drop, WE and MAKE; MOTION and without; CODE, the claim and the fine print), then the HUD, glitch pass, compositor and motion-blur accumulator.</td></tr>
-      <tr><td class="m">04 Score</td><td>Synthesised the kit (14 voice types) and wrote the score against the same cue sheet, then set up the mix bus: reverb, delay, bit-crusher, compressor and limiter.</td></tr>
+      <tr><td class="m">04 Score</td><td>Synthesised the kit (18 voice types) and wrote the score against the same cue sheet, then set up the mix bus: reverb, delay, bit-crusher, compressor and limiter.</td></tr>
       <tr><td class="m">05 Player &amp; renderer</td><td>Wrote the in-browser player (audio-clocked playback, scrubber, dope sheet, principles overlay), a build step that stitches the sources into one page, and the offline renderer.</td></tr>
     </table>
     <table class="small">
@@ -21,7 +21,7 @@
       <tr><td class="m">09 Blur test</td><td>An 8-sample blur stepped visibly on the fastest move (MOTION entering at about 17,000 px/s). Rebuilt the accumulator in float at 24 samples.</td></tr>
       <tr><td class="m">10 UI pass</td><td>Screenshotted the player at desktop and phone widths. Fixed a hidden-element rule, ambiguous timecodes, colliding scrubber labels and an oversized play button on phones. The player now idles instead of redrawing when paused.</td></tr>
       <tr><td class="m">11 Master</td><td>Published the player. Rendered {{FRAMES}} frames with 24-sample blur and muxed the master. Re-shot the last 2.5 s so the footnote quotes the final line count. The first encode was 353 MB because film grain is incompressible noise. Lighter grain at CRF 18 brought it to about 16 MB with no visible loss.</td></tr>
-      <tr><td class="m">12 Mix fix</td><td>Charting loudness for this document showed the “silence” at 16 s peaking at −9.8 LUFS because of the glass ping. Lowered the pings 7–10 dB. A renderer bug wiped the frame cache during the audio-only pass, so the master was re-rendered in full. The frames are deterministic, so they came back identical.</td></tr>
+      <tr><td class="m">12 Mix fix</td><td>Charting loudness for this document showed the “silence” at 16 s peaking at −9.8 LUFS because of the glass ping. Lowered the pings 5–11 dB. A renderer bug wiped the frame cache during the audio-only pass, so the master was re-rendered in full. The frames are deterministic, so they came back identical.</td></tr>
       <tr><td class="m">13 This document</td><td>Laid out in HTML in the film’s own typefaces, printed to PDF with the same headless browser, then proofed page by page.</td></tr>
     </table>
   </div>
@@ -37,7 +37,7 @@
       <h2 style="font-size:17pt">First render, first notes</h2>
       <p class="small">The first full render already worked end to end: every scene, transition and cue in place. The review notes were about craft and one real bug.</p>
       <ul class="list small">
-        <li><b>Bug</b> Filled marquee rows came out flamingo. The helper that draws the separator dots left its fill colour set, so every word after the first dot inherited it. Fixed by setting the fill per word. Pink rows also broke Rule 7: flamingo belongs to the dot.</li>
+        <li><b>Bug</b> Filled marquee rows came out flamingo. The helper that draws the separator dots left its fill colour set, so every word after the first dot inherited it. Fixed by setting the fill per word. Pink rows also broke Rule 7: flamingo is for the dot and its accents, not whole rows of type.</li>
         <li><b>Timing</b> The collapse used an exponential ease-in, so the rows didn’t visibly move until the last three frames. Switched to a quartic ease-in so the viewer sees the squeeze happen.</li>
         <li><b>Choreography</b> On the back-half sheet, the ending blinked out at the right-hand end of the sentence. The film opens on a centred dot, so it should close on one. The asterisk now drifts home, turns back into the opening dot, and blinks out.</li>
         <li><b>Kept</b> The particle swarm, the MAKE construction and the zoom into the ink worked as planned and were left alone.</li>
@@ -70,7 +70,7 @@
     <figure><img src="img/ui-phone.jpg" style="max-height:170mm; object-fit:contain; object-position:top"><p class="cap">At 390 px.</p></figure>
     <div>
       <h2 style="font-size:16pt">The player</h2>
-      <p class="small">The browser version is not a video. It renders the film live on a canvas at the viewer’s resolution, with the soundtrack synthesised on load. Picture is slaved to the audio clock, so it stays in sync.</p>
+      <p class="small">The browser version is not a video. It renders the film live on a canvas sized to the player and the screen’s pixel density (up to 2×, at most 1920 px wide), with the soundtrack synthesised on load. Picture is slaved to the audio clock, so it stays in sync.</p>
       <ul class="list small">
         <li><b>Transport</b> Play, SMPTE timecode, bar and beat, a scrubber drawn from the real waveform with bar lines and scene marks.</li>
         <li><b>Dope sheet</b> Every scene with its picture and sound notes; click to jump.</li>
@@ -78,7 +78,7 @@
         <li><b>Keys</b> Space, ← → by one beat, Home.</li>
       </ul>
       <h3 style="margin-top:4mm">UI fixes from review</h3>
-      <p class="small">Hidden elements forced hidden; timecodes changed from SS:FF to m:ss; short scrubber labels; a smaller play button on phones; the canvas idles when paused.</p>
+      <p class="small">Hidden elements forced hidden; dope-sheet timecodes changed from SS:FF to m:ss; short scrubber labels; a smaller play button on phones; the canvas idles when paused.</p>
     </div>
   </div>
   <div class="folio">18</div>

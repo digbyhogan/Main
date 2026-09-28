@@ -135,7 +135,7 @@ function sceneCode(g, t) {
     if (grow <= 0) g.fillRect(-full / 2, -thick / 2, full * sp, thick);
     else { const half = lerp(full / 2, W * 1.3, grow); g.fillRect(-half, -thick / 2, half * 2, thick); }
     g.restore();
-    const u = Ez.inOutExpo(seg(t, 21.8, 22.0)) * 1400;
+    const u = Ez.inOutExpo(seg(t, CUE.wipe2 + 0.1, CUE.final[0])) * 1400;
     if (u > 0) { g.fillStyle = COL.ultra; g.fillRect(-200, CY - u / 2, W + 400, u); }
   }
 }
@@ -220,7 +220,7 @@ function drawWordIn(g, w, i, t) {
 
 function sceneFinale(g, t) {
   bg(g, COL.ultra);
-  liquidWipe(g, seg(t, 26.2, 26.85), COL.ink, -1);
+  liquidWipe(g, seg(t, CUE.curtain, CUE.curtain + 0.65), COL.ink, -1);
   const out = 1 - seg(t, CUE.fadeOut + 0.25, CUE.fadeOut + 0.6);
 
   if (t < CUE.reflow) {
@@ -307,7 +307,7 @@ function hud(g, t) {
 }
 
 // ═══ Compositor ══════════════════════════════════════════════════
-const GLITCH = [[18.0, 0.22, 1], [20.0, 0.14, 0.8], [20.55, 0.3, 0.5], [24.0, 0.1, 0.35]];
+const GLITCH = [[CUE.code, 0.22, 1], [CUE.slash, 0.14, 0.8], [CUE.slash + 0.55, 0.3, 0.5], [CUE.final[4], 0.1, 0.35]];
 function glitchAmt(t) {
   let a = 0;
   for (const [s, d, k] of GLITCH) if (t >= s && t < s + d) a = Math.max(a, k * (1 - (t - s) / d));

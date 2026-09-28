@@ -86,7 +86,7 @@ function gridSvg(CUE) {
   const hits = cueHits(CUE);
   for (const h of hits) s += `<circle cx="${X(h)}" cy="86" r="3" fill="${C.flamingo}"/>`;
   const on = hits.filter(h => Math.abs(h * 8 - Math.round(h * 8)) < 1e-6).length;
-  s += `<text x="${x0}" y="110" font-size="7.5" fill="${C.muted}">BARS 1–15 · ${hits.length} MAJOR CUES · ${on} ON THE 1/16 GRID (0.125 s) · BOUNCE FILLS SUBDIVIDE TO 1/64</text>`;
+  s += `<text x="${x0}" y="110" font-size="7.5" fill="${C.muted}">BARS 1–15 · ${hits.length} MAJOR CUES · ${on} ON THE 1/16 GRID (0.125 s) · BOUNCE FILLS SUBDIVIDE TO 1/32</text>`;
   return s + '</svg>';
 }
 

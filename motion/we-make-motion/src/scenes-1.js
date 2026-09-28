@@ -166,7 +166,7 @@ function sceneWe(g, t) {
     });
   }
   g.restore();
-  liquidWipe(g, seg(t, 5.62, 6.0), COL.chalk, 1);
+  liquidWipe(g, seg(t, CUE.wipe1, CUE.grid), COL.chalk, 1);
 }
 
 // ═══ C · MAKE (6 – 10s) ══════════════════════════════════════════
@@ -183,8 +183,8 @@ const MK = {
 };
 // stroke list: [points, start, duration, letterIndex]
 MK.strokes = [
-  [MK.M, 6.5, 0.42, 0], [MK.A, 7.0, 0.36, 1], [MK.Ks, 7.5, 0.22, 2],
-  [MK.Ka, 7.56, 0.3, 2], [MK.Eb, 8.0, 0.36, 3],
+  [MK.M, CUE.make[0], 0.42, 0], [MK.A, CUE.make[1], 0.36, 1], [MK.Ks, CUE.make[2], 0.22, 2],
+  [MK.Ka, CUE.make[2] + 0.06, 0.3, 2], [MK.Eb, CUE.make[3], 0.36, 3],
 ];
 const MAKE_DOT_R = 24;
 
@@ -258,7 +258,7 @@ function sceneMake(g, t) {
     g.restore();
   });
   // E's middle bar: draws on, then becomes the horizon
-  const mOn = Ez.outQuart(seg(t, 8.1, 8.32));
+  const mOn = Ez.outQuart(seg(t, CUE.make[3] + 0.1, CUE.make[3] + 0.32));
   const ext = Ez.outExpo(seg(t, CUE.lineOut, 9.65));
   const x0 = lerp(1489, -150, ext), x1 = lerp(1489 + (1650 - 1489) * mOn, W + 150, ext);
   const irisR = 2300 * Ez.inOutQuart(seg(t, CUE.iris, 10.0));

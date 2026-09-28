@@ -2,7 +2,7 @@
 const SCENES = [
   { t: 0, mark: 'Drop', name: 'The drop', motion: 'A dot pops in, crouches, jumps and falls. Stretched by speed, flattened by impact, volume kept.', sound: 'The bounces halve in length (0.5, 0.25, 0.125 s), so the ball plays its own drum fill.' },
   { t: 2, mark: 'We', name: 'WE', motion: 'Mitosis: 1 → 2 → 4 → about a thousand particles, curving home in a left-to-right stagger.', sound: 'A pluck per split, a sparkle of pentatonic blips, snare and clap on the lock.' },
-  { t: 6, mark: 'Make', name: 'MAKE', motion: 'A monoline alphabet drawn one letter per beat on a construction grid. The dot clears the K by a pixel.', sound: 'Woodblock clacks tuned upward, one per glyph.' },
+  { t: 6, mark: 'Make', name: 'MAKE', motion: 'A monoline alphabet drawn one letter per beat on a construction grid. The dot clears the K by a hair.', sound: 'Woodblock clacks tuned upward, one per glyph.' },
   { t: 10, mark: 'Motion', name: 'MOTION', motion: 'Letters ride a travelling sine wave and turn with its tangent. Then a marquee accelerates and collapses to a line.', sound: 'Full groove, an arpeggio as the letters land, a snare roll from 8ths to 32nds, a tape stop.' },
   { t: 16, mark: 'Without', name: 'without', motion: 'Stillness. A serif whisper after the shout. The dot becomes the tittle of the i, and we zoom into the ink of the o.', sound: 'One glass ping, some air, a riser into the cut.' },
   { t: 18, mark: 'Code', name: 'CODE', motion: 'Decoded one letter per eighth note, struck through, dropped. The bar hangs for a beat before it notices.', sound: 'Bit-crushed hats, square-wave locks, a slash, falling bloops.' },
@@ -21,7 +21,7 @@ const PRINCIPLES = [
   [6.0, 6.5, 'Staging', 'The grid sets up the space before the action lands in it.'],
   [6.5, 8.4, 'Rhythm', 'One glyph per beat, drawn like a pen stroke.'],
   [7.25, 7.5, 'Follow-through', 'The dot settles with two shrinking bounces.'],
-  [8.3, 9.1, 'Appeal', 'A character hop that clears the K by a pixel.'],
+  [8.3, 9.1, 'Appeal', 'A character hop that clears the K by a hair.'],
   [9.25, 10.0, 'Match cut', "The E's crossbar becomes the horizon."],
   [10.0, 11.65, 'Arcs & path animation', 'Letters ride the wave and turn with its tangent.'],
   [11.65, 12.0, 'Overlapping action', 'Each letter settles on its own timing.'],
