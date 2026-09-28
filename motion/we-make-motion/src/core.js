@@ -246,5 +246,22 @@ function liquidWipe(g, p, color, dir = 1) {
 }
 function typeSlice(s, t, t0, cps = 40) { return s.slice(0, Math.max(0, Math.floor((t - t0) * cps))); }
 
+// Variable-font glyphs are built from overlapping contours, and Chrome anti-aliases each
+// contour on its own, which leaves hairline seams inside large letters at 4K. Stroking the
+// same outline in the fill colour, about one device pixel wide, closes them. Small text is
+// left alone so it keeps its weight.
+(() => {
+  const P = CanvasRenderingContext2D.prototype, fill = P.fillText;
+  P.fillText = function (str, x, y, maxW) {
+    maxW === undefined ? fill.call(this, str, x, y) : fill.call(this, str, x, y, maxW);
+    const m = this.getTransform(), k = Math.hypot(m.a, m.b), px = +((/(\d+(?:\.\d+)?)px/.exec(this.font) || [])[1] || 0);
+    if (px * k < 90 || typeof this.fillStyle !== 'string') return;
+    const ss = this.strokeStyle, lw = this.lineWidth, lj = this.lineJoin;
+    this.strokeStyle = this.fillStyle; this.lineWidth = 1.1 / k; this.lineJoin = 'round';
+    maxW === undefined ? this.strokeText(str, x, y) : this.strokeText(str, x, y, maxW);
+    this.strokeStyle = ss; this.lineWidth = lw; this.lineJoin = lj;
+  };
+})();
+
 const PREP = [];
 const onPrep = fn => PREP.push(fn);

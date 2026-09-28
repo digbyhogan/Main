@@ -35,7 +35,7 @@ function initGL(canvas) {
       if (useMatte < .5) { gl_FragColor = vec4(a, 1.); return; }
       vec3 b = texture2D(tB, vUv).rgb;
       float m = texture2D(tM, vUv).r;
-      vec2 p = vUv * res / 70.;
+      vec2 p = vUv * vec2(1920., 1080.) / 70.; // frame-relative, so the torn edge looks the same at any resolution
       float k = m + (fbm(p + seed) - .5) * edgeNoise;
       float mm = smoothstep(.5 - edgeW, .5 + edgeW, k);
       float e = exp(-pow((k - .5) / (edgeW * 2.2 + 1e-4), 2.));
