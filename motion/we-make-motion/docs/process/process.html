@@ -1,0 +1,661 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>We Make Motion* — Process</title>
+<style>
+  @font-face { font-family: 'Unbounded'; font-weight: 900; src: url(../../render/fonts/Unbounded-latin-Yq6F-LOTXC.woff2) format('woff2'); }
+  @font-face { font-family: 'Martian Mono'; font-weight: 100 800; src: url(../../render/fonts/MartianMono-latin-2V0PKIcADo.woff2) format('woff2'); }
+  @font-face { font-family: 'Bodoni Moda'; font-style: normal; font-weight: 400 700; src: url(fonts/BodoniModa-normal-latin.woff2) format('woff2'); }
+  @font-face { font-family: 'Bodoni Moda'; font-style: italic; font-weight: 400; src: url(fonts/BodoniModa-italic-latin.woff2) format('woff2'); }
+
+  :root {
+    --ink: #111116; --chalk: #F1EFE9; --paper: #F6F4EF; --ultra: #2D2DF5; --flamingo: #FF5A87; --butter: #FFD34E;
+    --muted: #6E6C76; --rule: rgba(17,17,22,.14);
+    --disp: 'Unbounded', 'Arial Black', sans-serif; --serif: 'Bodoni Moda', Georgia, serif; --mono: 'Martian Mono', 'DejaVu Sans Mono', monospace;
+  }
+  @page { size: 297mm 210mm; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #888; }
+  body { font-family: var(--serif); font-size: 10.2pt; line-height: 1.5; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; font-optical-sizing: auto; }
+  .page { width: 297mm; height: 210mm; padding: 15mm 16mm 13mm; position: relative; overflow: hidden; background: var(--paper); break-after: page; page-break-after: always; display: flex; flex-direction: column; }
+  .page.dark { background: var(--ink); color: var(--chalk); }
+  .page.blue { background: var(--ultra); color: var(--chalk); }
+  .run { display: flex; justify-content: space-between; font: 400 6.6pt/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8mm; }
+  .dark .run, .blue .run { color: rgba(241,239,233,.6); }
+  .folio { position: absolute; right: 16mm; bottom: 8mm; font: 400 6.6pt/1 var(--mono); color: var(--muted); letter-spacing: .08em; }
+  .dark .folio, .blue .folio { color: rgba(241,239,233,.6); }
+  h1, h2, h3 { margin: 0; font-weight: 900; text-wrap: balance; }
+  h2 { font-family: var(--disp); font-size: 21pt; line-height: 1.1; letter-spacing: -.01em; margin-bottom: 5mm; }
+  h2 i { font-style: normal; color: var(--flamingo); }
+  h3 { font-family: var(--mono); font-weight: 700; font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 2mm; color: var(--ink); }
+  .dark h3, .blue h3 { color: var(--chalk); }
+  p { margin: 0 0 2.6mm; max-width: 68ch; }
+  .lede { font-size: 13pt; line-height: 1.42; max-width: 58ch; }
+  .it { font-style: italic; }
+  .mono, code, pre { font-family: var(--mono); }
+  code { font-size: 7.6pt; background: rgba(17,17,22,.06); padding: .2mm 1mm; border-radius: 1mm; }
+  pre { font-size: 6.9pt; line-height: 1.55; background: var(--ink); color: var(--chalk); padding: 4mm 5mm; border-radius: 1.5mm; margin: 0; white-space: pre-wrap; }
+  pre .k { color: #8C8CFF; } pre .n { color: var(--flamingo); } pre .s { color: var(--butter); } pre .c { color: rgba(241,239,233,.5); }
+  .cols { display: grid; gap: 9mm; flex: 1; min-height: 0; }
+  .c2 { grid-template-columns: 1fr 1fr; } .c3 { grid-template-columns: 1fr 1fr 1fr; } .c12 { grid-template-columns: 1fr 1.25fr; } .c21 { grid-template-columns: 1.3fr 1fr; }
+  .small { font-size: 8.8pt; line-height: 1.45; }
+  .cap { font: 400 6.4pt/1.5 var(--mono); color: var(--muted); letter-spacing: .02em; margin-top: 1.6mm; }
+  .dark .cap, .blue .cap { color: rgba(241,239,233,.65); }
+  figure { margin: 0; }
+  figure img { display: block; width: 100%; border-radius: 1mm; }
+  ul.list { margin: 0; padding: 0; list-style: none; }
+  ul.list li { padding: 1.5mm 0; border-top: 1px solid var(--rule); }
+  ul.list li:last-child { border-bottom: 1px solid var(--rule); }
+  .dark ul.list li { border-color: rgba(241,239,233,.14); }
+  ul.list b { font-family: var(--mono); font-size: 7.2pt; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; margin-right: 2mm; }
+  table { border-collapse: collapse; width: 100%; font-size: 8.4pt; }
+  th { font: 700 6.4pt/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; text-align: left; color: var(--muted); padding: 0 3mm 1.5mm 0; border-bottom: 1px solid var(--ink); }
+  td { padding: 1.6mm 3mm 1.6mm 0; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.4; }
+  td.m { font-family: var(--mono); font-size: 7pt; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .num { font-variant-numeric: tabular-nums; }
+  .tag { display: inline-block; font: 700 6pt/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 1.1mm 1.6mm; border-radius: 1mm; background: rgba(17,17,22,.08); margin: 0 1mm 1mm 0; }
+  .dark .tag { background: rgba(241,239,233,.12); }
+  .strips { display: grid; gap: 1.6mm; }
+  .strips img { display: block; width: 100%; aspect-ratio: 2.75; object-fit: cover; border-radius: 1mm; }
+  .strips.tall img { aspect-ratio: 2.5; }
+  .ba { display: grid; grid-template-columns: 58mm 58mm 1fr; gap: 3mm 5mm; align-items: start; padding: 2.2mm 0; border-top: 1px solid var(--rule); }
+  .ba img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 1mm; }
+  .ba .lbl { font: 700 5.8pt/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 1.2mm; }
+  .dot { display: inline-block; width: .62em; height: .62em; border-radius: 50%; background: var(--flamingo); vertical-align: baseline; }
+</style>
+</head>
+<body>
+
+<!-- 1 · COVER -->
+<section class="page dark" style="padding:16mm 18mm">
+  <div class="run"><span>Process notes</span><span>28 September 2026</span></div>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center">
+    <div style="font:900 44pt/1 var(--disp); letter-spacing:-.01em">WE MAKE</div>
+    <div style="font:900 96pt/1 var(--disp); letter-spacing:-.015em; margin-top:2mm">MOTION</div>
+    <div style="display:flex; align-items:baseline; gap:6mm; margin-top:4mm">
+      <span style="font:italic 400 58pt/1 var(--serif)">without</span>
+      <span style="font:700 50pt/1 var(--mono)">CODE</span><span style="color:var(--flamingo); font:900 44pt/1 var(--disp); position:relative; top:-18pt">*</span>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:14mm; align-items:end">
+    <p class="lede" style="color:rgba(241,239,233,.85); margin:0">How a 30-second motion piece and its percussive score were designed, choreographed, synthesised and rendered, from a one-paragraph brief to the final 1080p60 master.</p>
+    <p class="mono" style="font-size:6.8pt; line-height:1.7; letter-spacing:.06em; text-transform:uppercase; color:rgba(241,239,233,.6); margin:0; text-align:right">30 s · 1920×1080 · 60 fps · 120 BPM<br>1,800 frames · 43,200 rendered sub-frames<br><span style="color:var(--flamingo)">*</span>This document is also code.</p>
+  </div>
+</section>
+
+<!-- 2 · AT A GLANCE -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Overview</span></div>
+  <h2>At a glance</h2>
+  <div class="cols c21">
+    <div>
+      <p class="lede">The brief asked for a sleek, fluid, 30-second motion sequence featuring five words (<b>We, Make, Motion, Without, Code</b>) with percussive sound and distinct effects tied to key moments. The result is a short film that argues its headline for 26 seconds and then footnotes itself.</p>
+      <p>Everything was built in code: a single HTML page draws each frame on a canvas as a pure function of time, and the soundtrack is synthesised from oscillators and filtered noise by the same page. No video editor, no audio workstation, no samples, no stock assets. One cue sheet drives both picture and sound, which is how every bounce, slam and wipe lands on its hit.</p>
+      <h3 style="margin-top:5mm">Deliverables</h3>
+      <ul class="list small">
+        <li><b>Master</b> <code>we-make-motion.mp4</code>: 1920×1080, 60 fps, H.264 High, AAC 256 kb/s, 15.8 MB.</li>
+        <li><b>Interactive player</b> A private claude.ai artifact: real-time playback, waveform scrubber, dope sheet, and a Principles overlay that names the technique on screen.</li>
+        <li><b>Source</b> Repository <code>digbyhogan/main</code>, folder <code>motion/we-make-motion/</code>, with an offline renderer that reproduces the master.</li>
+        <li><b>This document</b> Approach, workings, and the progression from first pass to final.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>By the numbers</h3>
+      <table class="num">
+        <tr><td>Duration</td><td class="m">30.000 s · 15 bars of 4/4</td></tr>
+        <tr><td>Tempo</td><td class="m">120 BPM · beat = 0.5 s</td></tr>
+        <tr><td>Frames</td><td class="m">1,800 at 60 fps</td></tr>
+        <tr><td>Sub-frames rendered for motion blur</td><td class="m">43,200 (24 per frame)</td></tr>
+        <tr><td>Scenes</td><td class="m">8</td></tr>
+        <tr><td>Particles forming “WE”</td><td class="m">1,888</td></tr>
+        <tr><td>Sound sources scheduled</td><td class="m">686 oscillators + noise</td></tr>
+        <tr><td>Samples or recordings used</td><td class="m">0</td></tr>
+        <tr><td>Loudness · peak</td><td class="m">−16.4 LUFS · −0.8 dBFS</td></tr>
+        <tr><td>Colours · typefaces · protagonists</td><td class="m">5 · 3 · 1 dot</td></tr>
+        <tr><td>Lines in the film’s page</td><td class="m">1,840</td></tr>
+        <tr><td>Render time (4 CPU cores)</td><td class="m">13 min</td></tr>
+      </table>
+      <h3 style="margin-top:6mm">Contents</h3>
+      <p class="small mono" style="font-size:7pt; line-height:1.9; color:var(--muted)">03 Brief · 04 Concept · 05 Design system · 06 Timing · 07 Motion toolkit · 08–11 Scene by scene · 12–13 Sound · 14 Rendering · 15–19 Progression to final · 20 Appendix</p>
+    </div>
+  </div>
+  <div class="folio">02</div>
+</section>
+
+<!-- 3 · BRIEF -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>The brief</span></div>
+  <h2>The brief, and the prompt I wrote myself</h2>
+  <div class="cols c2">
+    <div>
+      <h3>What was asked</h3>
+      <p class="it" style="font-size:11.5pt; line-height:1.45; border-left:2px solid var(--flamingo); padding-left:4mm">“Self prompt and create a modernistic, sleek and fluid motion design sequence that really shows off your capabilities, not just in design but in the principles of motion and motion graphics … feature some key words: We, Make, Motion, Without, Code … 30 seconds, a percussive sound and distinctive sound effects that align with key moments.”</p>
+      <h3 style="margin-top:5mm">How I read it</h3>
+      <p>Three things were being tested at once: visual design, the craft of animation (the twelve classic principles and the modern motion-graphics vocabulary), and audio-visual sync. A pretty title sequence would only cover the first. So the piece had to <i>demonstrate</i> principles on screen, legibly, and every one of them had to be timed to sound.</p>
+      <p>The five words also carry an irony: a film saying “without code” that is built entirely from code. I decided to use that rather than hide it. The film makes the claim with full conviction, then adds an asterisk.</p>
+      <h3 style="margin-top:5mm">Assumptions I made instead of asking</h3>
+      <ul class="list small">
+        <li><b>Format</b> 16:9 at 1920×1080 and 60 fps, because fluid motion reads better at 60.</li>
+        <li><b>Output</b> An MP4 master plus a live, scrubbable web version.</li>
+        <li><b>Sound</b> Percussion-led, with tuned accents in C major pentatonic so plucks and pings sit together.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>The self-prompt</h3>
+      <pre><span class="c">// creative brief, written before any code</span>
+Make a 30-second film that says
+<span class="s">"We make motion without code"</span>,
+built entirely from code, and let it notice.
+
+<span class="k">Rules</span>
+1. One protagonist: a flamingo dot. It opens
+   the film, appears in almost every scene,
+   and closes it.
+2. One tempo: 120 BPM. Every cut, hit and
+   transition lands on the 16th-note grid.
+3. One cue sheet: picture and sound read the
+   same timestamps, so sync can't drift.
+4. Every frame is a pure function of time,
+   so it can be scrubbed, rendered offline
+   and motion-blurred without re-simulation.
+5. Each word gets its own motion language:
+   WE assembles, MAKE constructs, MOTION flows,
+   without is still, CODE decodes and collapses.
+6. Show the principles, don't list them.
+7. Restraint: five colours, three typefaces,
+   flamingo belongs to the dot.
+8. End on the joke. Keep it dry.</pre>
+      <p class="cap">The rules above shaped every later decision. Rule 4 is the technical one that everything else depends on.</p>
+    </div>
+  </div>
+  <div class="folio">03</div>
+</section>
+
+<!-- 4 · CONCEPT -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Concept &amp; structure</span></div>
+  <h2>A claim in eight beats, and one footnote</h2>
+  <div class="cols c12" style="grid-template-columns: 1fr 1.35fr">
+    <div>
+      <table>
+        <tr><th>Time</th><th>Beat</th><th>Motion language</th></tr>
+        <tr><td class="m">0:00</td><td><b>The drop</b></td><td>A dot falls and bounces. The film introduces its protagonist and its tempo.</td></tr>
+        <tr><td class="m">0:02</td><td><b>WE</b></td><td>One becomes many: mitosis, then a particle swarm that assembles the word.</td></tr>
+        <tr><td class="m">0:06</td><td><b>MAKE</b></td><td>Construction: a grid, measurements, letters drawn stroke by stroke.</td></tr>
+        <tr><td class="m">0:10</td><td><b>MOTION</b></td><td>Flow, then excess: a wave, a marquee, a build that collapses to a line.</td></tr>
+        <tr><td class="m">0:16</td><td><b>without</b></td><td>Absence: silence, stillness, a thin serif. The camera dives into the ink.</td></tr>
+        <tr><td class="m">0:18</td><td><b>CODE</b></td><td>Decoded, struck through, dropped.</td></tr>
+        <tr><td class="m">0:22</td><td><b>The claim</b></td><td>All five words, each entering with its own verb.</td></tr>
+        <tr><td class="m">0:26</td><td><b>The fine print</b></td><td>The full stop becomes an asterisk. The footnote types itself.</td></tr>
+      </table>
+      <p class="small" style="margin-top:4mm">The dot is in almost every scene: it drops and bounces, splits into the particles, lands in the counter of the A, surfs the wave, becomes the tittle of the <span class="it">i</span>, returns as the full stop, turns into the asterisk, and finally blinks out where it started.</p>
+    </div>
+    <div style="display:flex; flex-direction:column">
+      <h3>Energy across the film</h3>
+      <svg viewBox="0 0 640 290" style="width:100%; height:auto; display:block" font-family="Martian Mono, monospace"><rect x="46" y="34" width="38.93333333333334" height="228" fill="#111116" fill-opacity="0.03"/><text x="49" y="18" font-size="8" fill="#6E6C76">Drop</text><rect x="84.93333333333334" y="34" width="77.86666666666667" height="228" fill="#111116" fill-opacity="0.07"/><text x="87.93333333333334" y="29" font-size="8" fill="#6E6C76">WE</text><rect x="162.8" y="34" width="77.86666666666665" height="228" fill="#111116" fill-opacity="0.03"/><text x="165.8" y="18" font-size="8" fill="#6E6C76">MAKE</text><rect x="240.66666666666666" y="34" width="116.79999999999998" height="228" fill="#111116" fill-opacity="0.07"/><text x="243.66666666666666" y="29" font-size="8" fill="#6E6C76">MOTION</text><rect x="357.46666666666664" y="34" width="38.93333333333334" height="228" fill="#111116" fill-opacity="0.03"/><text x="360.46666666666664" y="18" font-size="8" fill="#6E6C76">without</text><rect x="396.4" y="34" width="77.86666666666667" height="228" fill="#111116" fill-opacity="0.07"/><text x="399.4" y="29" font-size="8" fill="#6E6C76">CODE</text><rect x="474.26666666666665" y="34" width="77.86666666666667" height="228" fill="#111116" fill-opacity="0.03"/><text x="477.26666666666665" y="18" font-size="8" fill="#6E6C76">Claim</text><rect x="552.1333333333333" y="34" width="77.86666666666667" height="228" fill="#111116" fill-opacity="0.07"/><text x="555.1333333333333" y="29" font-size="8" fill="#6E6C76">Fine print</text><line x1="46" x2="630" y1="220.54545454545456" y2="220.54545454545456" stroke="#111116" stroke-opacity=".1" stroke-width="1"/><text x="40" y="223.54545454545456" font-size="8" fill="#6E6C76" text-anchor="end">−50</text><line x1="46" x2="630" y1="179.0909090909091" y2="179.0909090909091" stroke="#111116" stroke-opacity=".1" stroke-width="1"/><text x="40" y="182.0909090909091" font-size="8" fill="#6E6C76" text-anchor="end">−40</text><line x1="46" x2="630" y1="137.63636363636363" y2="137.63636363636363" stroke="#111116" stroke-opacity=".1" stroke-width="1"/><text x="40" y="140.63636363636363" font-size="8" fill="#6E6C76" text-anchor="end">−30</text><line x1="46" x2="630" y1="96.18181818181819" y2="96.18181818181819" stroke="#111116" stroke-opacity=".1" stroke-width="1"/><text x="40" y="99.18181818181819" font-size="8" fill="#6E6C76" text-anchor="end">−20</text><line x1="46" x2="630" y1="54.72727272727275" y2="54.72727272727275" stroke="#111116" stroke-opacity=".1" stroke-width="1"/><text x="40" y="57.72727272727275" font-size="8" fill="#6E6C76" text-anchor="end">−10</text><text x="46" y="276" font-size="8" fill="#6E6C76" text-anchor="middle">0 s</text><text x="143.33333333333331" y="276" font-size="8" fill="#6E6C76" text-anchor="middle">5 s</text><text x="240.66666666666666" y="276" font-size="8" fill="#6E6C76" text-anchor="middle">10 s</text><text x="338" y="276" font-size="8" fill="#6E6C76" text-anchor="middle">15 s</text><text x="435.3333333333333" y="276" font-size="8" fill="#6E6C76" text-anchor="middle">20 s</text><text x="532.6666666666667" y="276" font-size="8" fill="#6E6C76" text-anchor="middle">25 s</text><text x="630" y="276" font-size="8" fill="#6E6C76" text-anchor="middle">30 s</text><text x="40" y="40" font-size="8" fill="#6E6C76" text-anchor="end">LUFS</text><polyline fill="none" stroke="#2D2DF5" stroke-width="2" stroke-linejoin="round" points="46.0,262.0 47.9,262.0 49.9,262.0 51.8,120.6 53.8,117.3 55.7,148.4 57.7,148.4 59.6,148.4 61.6,195.7 63.5,234.6 65.5,75.5 67.4,73.8 69.4,73.8 71.3,73.8 73.3,114.8 75.2,82.5 77.1,82.1 79.1,75.0 81.0,71.7 83.0,79.2 84.9,80.0 86.9,90.0 88.8,92.0 90.8,102.0 92.7,101.6 94.7,87.9 96.6,92.9 98.6,93.7 100.5,93.3 102.5,114.8 104.4,114.8 106.3,120.6 108.3,116.1 110.2,119.0 112.2,117.3 114.1,121.5 116.1,126.4 118.0,116.9 120.0,111.1 121.9,93.3 123.9,71.7 125.8,68.0 127.8,66.7 129.7,68.8 131.7,85.0 133.6,76.3 135.5,78.8 137.5,80.0 139.4,80.4 141.4,124.8 143.3,78.4 145.3,77.5 147.2,77.1 149.2,77.1 151.1,124.4 153.1,112.3 155.0,113.6 157.0,113.6 158.9,102.4 160.9,115.3 162.8,77.1 164.7,75.9 166.7,77.9 168.6,77.5 170.6,121.1 172.5,82.9 174.5,82.1 176.4,82.1 178.4,82.1 180.3,127.3 182.3,82.1 184.2,80.8 186.2,79.6 188.1,79.2 190.1,112.8 192.0,82.9 193.9,83.3 195.9,83.3 197.8,83.3 199.8,127.3 201.7,83.3 203.7,80.8 205.6,80.8 207.6,80.8 209.5,114.8 211.5,82.5 213.4,81.7 215.4,81.3 217.3,81.3 219.3,126.4 221.2,80.8 223.1,80.0 225.1,79.6 227.0,79.6 229.0,116.9 230.9,128.1 232.9,129.8 234.8,129.8 236.8,150.5 238.7,102.8 240.7,73.8 242.6,66.3 244.6,63.4 246.5,64.3 248.5,74.6 250.4,73.4 252.3,77.5 254.3,77.5 256.2,75.9 258.2,88.7 260.1,73.4 262.1,72.1 264.0,71.3 266.0,71.3 267.9,81.3 269.9,72.6 271.8,74.6 273.8,77.5 275.7,81.3 277.7,108.6 279.6,77.1 281.5,68.8 283.5,65.1 285.4,64.3 287.4,73.8 289.3,72.1 291.3,77.1 293.2,80.4 295.2,81.3 297.1,119.4 299.1,77.9 301.0,77.1 303.0,77.1 304.9,77.1 306.9,119.8 308.8,82.1 310.7,81.3 312.7,80.8 314.6,80.8 316.6,121.5 318.5,79.2 320.5,77.9 322.4,77.5 324.4,77.1 326.3,116.1 328.3,79.6 330.2,79.6 332.2,77.9 334.1,77.9 336.1,112.3 338.0,80.0 339.9,78.8 341.9,76.7 343.8,74.6 345.8,90.4 347.7,75.0 349.7,70.1 351.6,64.7 353.6,64.7 355.5,73.4 357.5,78.8 359.4,99.5 361.4,110.3 363.3,113.2 365.3,175.8 367.2,104.9 369.1,95.4 371.1,91.6 373.0,89.5 375.0,98.3 376.9,99.9 378.9,103.2 380.8,106.5 382.8,108.6 384.7,129.3 386.7,147.6 388.6,163.8 390.6,164.6 392.5,124.0 394.5,87.9 396.4,68.8 398.3,63.0 400.3,61.4 402.2,63.8 404.2,75.9 406.1,74.2 408.1,77.9 410.0,80.4 412.0,81.3 413.9,127.7 415.9,80.4 417.8,79.6 419.8,77.9 421.7,77.9 423.7,114.0 425.6,81.7 427.5,82.1 429.5,80.4 431.4,80.4 433.4,114.0 435.3,79.2 437.3,73.4 439.2,70.5 441.2,68.8 443.1,79.6 445.1,87.5 447.0,92.0 449.0,98.3 450.9,105.3 452.9,118.6 454.8,81.3 456.7,80.4 458.7,80.4 460.6,80.4 462.6,126.9 464.5,172.5 466.5,188.2 468.4,179.9 470.4,121.1 472.3,114.0 474.3,79.2 476.2,78.4 478.2,79.6 480.1,80.4 482.1,124.0 484.0,80.8 485.9,79.6 487.9,79.6 489.8,79.2 491.8,121.9 493.7,77.9 495.7,69.2 497.6,65.5 499.6,63.8 501.5,73.8 503.5,69.7 505.4,72.6 507.4,73.4 509.3,73.0 511.3,94.1 513.2,76.7 515.1,77.1 517.1,77.1 519.0,77.9 521.0,111.5 522.9,75.0 524.9,74.2 526.8,73.8 528.8,73.8 530.7,112.3 532.7,83.3 534.6,83.3 536.6,76.3 538.5,73.4 540.5,81.3 542.4,69.7 544.3,73.4 546.3,76.3 548.2,80.0 550.2,121.9 552.1,79.6 554.1,78.8 556.0,73.8 558.0,73.0 559.9,93.3 561.9,94.9 563.8,123.1 565.8,141.4 567.7,147.2 569.7,200.2 571.6,247.9 573.5,256.2 575.5,102.8 577.4,95.8 579.4,95.8 581.3,95.8 583.3,115.7 585.2,160.0 587.2,164.6 589.1,161.3 591.1,160.9 593.0,160.4 595.0,162.5 596.9,161.7 598.9,164.2 600.8,165.0 602.7,164.6 604.7,171.2 606.6,179.5 608.6,196.5 610.5,79.6 612.5,74.6 614.4,72.6 616.4,71.7 618.3,87.9 620.3,98.7 622.2,108.6 624.2,113.6 626.1,127.7 628.1,137.6"/><circle cx="281.5466666666666" cy="68.82181818181817" r="4" fill="#2D2DF5" stroke="#F6F4EF" stroke-width="2"/><text x="281.5466666666666" y="58.82181818181817" font-size="8.5" fill="#111116" text-anchor="middle">slam</text><circle cx="365.25333333333333" cy="175.7745454545455" r="4" fill="#2D2DF5" stroke="#F6F4EF" stroke-width="2"/><text x="365.25333333333333" y="190.7745454545455" font-size="8.5" fill="#111116" text-anchor="middle">drop-out</text><circle cx="437.28000000000003" cy="73.38181818181818" r="4" fill="#2D2DF5" stroke="#F6F4EF" stroke-width="2"/><text x="437.28000000000003" y="63.381818181818176" font-size="8.5" fill="#111116" text-anchor="middle">slash</text></svg>
+      <p class="cap">Momentary loudness of the final soundtrack (EBU R128, 400 ms window) sampled every 100 ms. Shaded bands are the eight scenes. The shape is deliberate: two builds, a hard drop to near silence at 16 s, a second act, and a soft landing.</p>
+    </div>
+  </div>
+  <div class="folio">04</div>
+</section>
+
+<!-- 5 · DESIGN SYSTEM -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Design system</span></div>
+  <h2>Five colours, three typefaces, one dot</h2>
+  <div class="cols c2">
+    <div>
+      <h3>Palette</h3>
+      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:2mm; margin-bottom:3mm">
+        <div style="background:#111116; height:22mm; border-radius:1mm"></div>
+        <div style="background:#F1EFE9; height:22mm; border-radius:1mm; box-shadow: inset 0 0 0 1px var(--rule)"></div>
+        <div style="background:#2D2DF5; height:22mm; border-radius:1mm"></div>
+        <div style="background:#FF5A87; height:22mm; border-radius:1mm"></div>
+        <div style="background:#FFD34E; height:22mm; border-radius:1mm"></div>
+      </div>
+      <table class="small">
+        <tr><td class="m">Ink #111116</td><td>Dark ground (drop, WE, CODE, fine print) and type on light scenes. Slightly blue-black, never pure black.</td></tr>
+        <tr><td class="m">Chalk #F1EFE9</td><td>Light ground (MAKE, without) and type on dark and blue scenes. Warm off-white.</td></tr>
+        <tr><td class="m">Ultramarine #2D2DF5</td><td>The loud ground: MOTION and the claim. Electric, close to International Klein Blue.</td></tr>
+        <tr><td class="m">Flamingo #FF5A87</td><td>Reserved for the dot and its deeds: echo trails, the strike-through, the asterisk.</td></tr>
+        <tr><td class="m">Butter #FFD34E</td><td>Code only: brackets, selection highlights, the caret.</td></tr>
+      </table>
+      <p class="small" style="margin-top:3mm">I avoided the common defaults (near-black with a single acid accent, cream with terracotta). Three grounds alternate scene to scene, giving the cut rhythm a colour rhythm too: ink → ink → chalk → ultramarine → chalk → ink → ultramarine → ink.</p>
+    </div>
+    <div>
+      <h3>Typography</h3>
+      <div style="border-top:1px solid var(--rule); padding:2.5mm 0">
+        <div style="font:900 30pt/1 var(--disp)">MOTION</div>
+        <p class="small" style="margin:1.5mm 0 0"><b>Unbounded 900</b>. Wide, geometric and heavy. The shouting voice: WE, MOTION, the claim.</p>
+      </div>
+      <div style="border-top:1px solid var(--rule); padding:2.5mm 0">
+        <div style="font:italic 400 34pt/1 var(--serif)">without</div>
+        <p class="small" style="margin:1.5mm 0 0"><b>Bodoni Moda Italic</b>. A high-contrast Didone whisper. Used for one word only, so the contrast lands like a change of tone of voice.</p>
+      </div>
+      <div style="border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:2.5mm 0">
+        <div style="font:700 26pt/1 var(--mono)">&lt;CODE/&gt;</div>
+        <p class="small" style="margin:1.5mm 0 0"><b>Martian Mono</b>. A wide monospace that rhymes with Unbounded’s proportions. CODE, the source code backdrop, the HUD and the footnote.</p>
+      </div>
+      <p class="small" style="margin-top:3mm"><b>MAKE</b> uses none of them: its letters are a custom monoline alphabet built from 13 stroke segments with round caps and joins, so they can be drawn on like a pen.</p>
+      <p class="small">A thin <b>HUD slate</b> frames most scenes: chapter label, tempo, running SMPTE timecode, bar number and a four-square beat indicator, so the viewer can literally see the beat.</p>
+    </div>
+  </div>
+  <div class="folio">05</div>
+</section>
+
+
+<!-- 6 · TIMING -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Timing architecture</span></div>
+  <h2>Everything lands on a grid</h2>
+  <div style="margin-bottom:6mm"><svg viewBox="0 0 1000 118" style="width:100%; height:auto; display:block" font-family="Martian Mono, monospace"><rect x="6.5" y="4" width="64.86666666666666" height="40" fill="#111116"  rx="2"/><text x="11" y="29" font-family="Unbounded, sans-serif" font-weight="900" font-size="8" fill="#F1EFE9">Drop</text><rect x="72.36666666666666" y="4" width="130.73333333333335" height="40" fill="#111116"  rx="2"/><text x="76.86666666666666" y="29" font-family="Unbounded, sans-serif" font-weight="900" font-size="11" fill="#F1EFE9">WE</text><rect x="204.10000000000002" y="4" width="130.7333333333333" height="40" fill="#F1EFE9" stroke="#111116" stroke-opacity=".25" rx="2"/><text x="208.60000000000002" y="29" font-family="Unbounded, sans-serif" font-weight="900" font-size="11" fill="#111116">MAKE</text><rect x="335.8333333333333" y="4" width="196.59999999999997" height="40" fill="#2D2DF5"  rx="2"/><text x="340.3333333333333" y="29" font-family="Unbounded, sans-serif" font-weight="900" font-size="11" fill="#F1EFE9">MOTION</text><rect x="533.4333333333333" y="4" width="64.86666666666667" height="40" fill="#F1EFE9" stroke="#111116" stroke-opacity=".25" rx="2"/><text x="537.9333333333333" y="29" font-family="Unbounded, sans-serif" font-weight="900" font-size="8" fill="#111116">without</text><rect x="599.3" y="4" width="130.73333333333335" height="40" fill="#111116"  rx="2"/><text x="603.8" y="29" font-family="Unbounded, sans-serif" font-weight="900" font-size="11" fill="#F1EFE9">CODE</text><rect x="731.0333333333333" y="4" width="130.73333333333335" height="40" fill="#2D2DF5"  rx="2"/><text x="735.5333333333333" y="29" font-family="Unbounded, sans-serif" font-weight="900" font-size="11" fill="#F1EFE9">Claim</text><rect x="862.7666666666667" y="4" width="130.73333333333335" height="40" fill="#111116"  rx="2"/><text x="867.2666666666667" y="29" font-family="Unbounded, sans-serif" font-weight="900" font-size="11" fill="#F1EFE9">Fine print</text><line x1="6" x2="6" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="9" y="69" font-size="7" fill="#6E6C76">1</text><line x1="22.466666666666665" x2="22.466666666666665" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="38.93333333333333" x2="38.93333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="55.400000000000006" x2="55.400000000000006" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="71.86666666666666" x2="71.86666666666666" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="74.86666666666666" y="69" font-size="7" fill="#6E6C76">2</text><line x1="88.33333333333333" x2="88.33333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="104.80000000000001" x2="104.80000000000001" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="121.26666666666667" x2="121.26666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="137.73333333333332" x2="137.73333333333332" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="140.73333333333332" y="69" font-size="7" fill="#6E6C76">3</text><line x1="154.2" x2="154.2" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="170.66666666666666" x2="170.66666666666666" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="187.13333333333333" x2="187.13333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="203.60000000000002" x2="203.60000000000002" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="206.60000000000002" y="69" font-size="7" fill="#6E6C76">4</text><line x1="220.06666666666666" x2="220.06666666666666" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="236.53333333333333" x2="236.53333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="253" x2="253" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="269.46666666666664" x2="269.46666666666664" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="272.46666666666664" y="69" font-size="7" fill="#6E6C76">5</text><line x1="285.93333333333334" x2="285.93333333333334" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="302.4" x2="302.4" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="318.8666666666667" x2="318.8666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="335.3333333333333" x2="335.3333333333333" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="338.3333333333333" y="69" font-size="7" fill="#6E6C76">6</text><line x1="351.79999999999995" x2="351.79999999999995" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="368.26666666666665" x2="368.26666666666665" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="384.73333333333335" x2="384.73333333333335" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="401.20000000000005" x2="401.20000000000005" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="404.20000000000005" y="69" font-size="7" fill="#6E6C76">7</text><line x1="417.6666666666667" x2="417.6666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="434.1333333333333" x2="434.1333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="450.6" x2="450.6" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="467.06666666666666" x2="467.06666666666666" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="470.06666666666666" y="69" font-size="7" fill="#6E6C76">8</text><line x1="483.53333333333336" x2="483.53333333333336" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="500" x2="500" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="516.4666666666667" x2="516.4666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="532.9333333333333" x2="532.9333333333333" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="535.9333333333333" y="69" font-size="7" fill="#6E6C76">9</text><line x1="549.4000000000001" x2="549.4000000000001" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="565.8666666666667" x2="565.8666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="582.3333333333334" x2="582.3333333333334" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="598.8" x2="598.8" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="601.8" y="69" font-size="7" fill="#6E6C76">10</text><line x1="615.2666666666667" x2="615.2666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="631.7333333333333" x2="631.7333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="648.2" x2="648.2" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="664.6666666666666" x2="664.6666666666666" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="667.6666666666666" y="69" font-size="7" fill="#6E6C76">11</text><line x1="681.1333333333333" x2="681.1333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="697.5999999999999" x2="697.5999999999999" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="714.0666666666667" x2="714.0666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="730.5333333333333" x2="730.5333333333333" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="733.5333333333333" y="69" font-size="7" fill="#6E6C76">12</text><line x1="747" x2="747" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="763.4666666666667" x2="763.4666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="779.9333333333333" x2="779.9333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="796.4000000000001" x2="796.4000000000001" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="799.4000000000001" y="69" font-size="7" fill="#6E6C76">13</text><line x1="812.8666666666667" x2="812.8666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="829.3333333333334" x2="829.3333333333334" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="845.8" x2="845.8" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="862.2666666666667" x2="862.2666666666667" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="865.2666666666667" y="69" font-size="7" fill="#6E6C76">14</text><line x1="878.7333333333333" x2="878.7333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="895.2" x2="895.2" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="911.6666666666666" x2="911.6666666666666" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="928.1333333333333" x2="928.1333333333333" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><text x="931.1333333333333" y="69" font-size="7" fill="#6E6C76">15</text><line x1="944.5999999999999" x2="944.5999999999999" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="961.0666666666667" x2="961.0666666666667" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="977.5333333333333" x2="977.5333333333333" y1="52" y2="62" stroke="#111116" stroke-opacity="0.25" stroke-width="1"/><line x1="994" x2="994" y1="52" y2="70" stroke="#111116" stroke-opacity="0.6" stroke-width="1"/><circle cx="10.940000000000001" cy="86" r="3" fill="#FF5A87"/><circle cx="38.93333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="55.400000000000006" cy="86" r="3" fill="#FF5A87"/><circle cx="63.63333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="67.75" cy="86" r="3" fill="#FF5A87"/><circle cx="69.80833333333334" cy="86" r="3" fill="#FF5A87"/><circle cx="80.1" cy="86" r="3" fill="#FF5A87"/><circle cx="88.33333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="96.56666666666666" cy="86" r="3" fill="#FF5A87"/><circle cx="137.73333333333332" cy="86" r="3" fill="#FF5A87"/><circle cx="220.06666666666666" cy="86" r="3" fill="#FF5A87"/><circle cx="236.53333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="253" cy="86" r="3" fill="#FF5A87"/><circle cx="269.46666666666664" cy="86" r="3" fill="#FF5A87"/><circle cx="244.76666666666668" cy="86" r="3" fill="#FF5A87"/><circle cx="248.88333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="250.94166666666666" cy="86" r="3" fill="#FF5A87"/><circle cx="285.93333333333334" cy="86" r="3" fill="#FF5A87"/><circle cx="302.4" cy="86" r="3" fill="#FF5A87"/><circle cx="335.3333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="360.03333333333336" cy="86" r="3" fill="#FF5A87"/><circle cx="364.15" cy="86" r="3" fill="#FF5A87"/><circle cx="368.26666666666665" cy="86" r="3" fill="#FF5A87"/><circle cx="372.3833333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="376.5" cy="86" r="3" fill="#FF5A87"/><circle cx="380.6166666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="401.20000000000005" cy="86" r="3" fill="#FF5A87"/><circle cx="467.06666666666666" cy="86" r="3" fill="#FF5A87"/><circle cx="524.7" cy="86" r="3" fill="#FF5A87"/><circle cx="549.4000000000001" cy="86" r="3" fill="#FF5A87"/><circle cx="565.8666666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="569.9833333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="572.0416666666666" cy="86" r="3" fill="#FF5A87"/><circle cx="577.3933333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="598.8" cy="86" r="3" fill="#FF5A87"/><circle cx="631.7333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="639.9666666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="648.2" cy="86" r="3" fill="#FF5A87"/><circle cx="656.4333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="664.6666666666666" cy="86" r="3" fill="#FF5A87"/><circle cx="672.9000000000001" cy="86" r="3" fill="#FF5A87"/><circle cx="714.0666666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="730.5333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="747" cy="86" r="3" fill="#FF5A87"/><circle cx="763.4666666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="779.9333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="796.4000000000001" cy="86" r="3" fill="#FF5A87"/><circle cx="812.8666666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="829.3333333333334" cy="86" r="3" fill="#FF5A87"/><circle cx="837.5666666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="841.6833333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="843.7416666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="862.2666666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="903.4333333333333" cy="86" r="3" fill="#FF5A87"/><circle cx="961.0666666666667" cy="86" r="3" fill="#FF5A87"/><circle cx="985.7666666666667" cy="86" r="3" fill="#FF5A87"/><text x="6" y="110" font-size="7.5" fill="#6E6C76">BARS 1–15 · 56 MAJOR CUES · 50 ON THE 1/16 GRID (0.125 s) · BOUNCE FILLS SUBDIVIDE TO 1/64</text></svg>
+    <p class="cap">The film as 15 bars of 4/4 at 120 BPM. Each tick is a beat (0.5 s); flamingo marks are the major hits read from the cue sheet.</p>
+  </div>
+  <div class="cols c2">
+    <div>
+      <h3>One cue sheet, two consumers</h3>
+      <p>Every significant moment lives once, in a single object called <code>CUE</code>. The picture reads it to decide when a letter lands, and the score reads the same values to decide when a kick fires. If I move the slam from 12.0 s to 12.25 s, the camera punch, the flash, the scale spring, the kick, the snare, the clap and the crash all move together. Sync cannot drift because there is nothing to drift apart.</p>
+      <p>The same idea drives the camera: a list of <code>[time, strength]</code> impacts feeds a decaying shake and a zoom punch, so the frame physically reacts to the loudest hits.</p>
+      <h3 style="margin-top:4mm">Why a grid</h3>
+      <p>120 BPM gives a beat of exactly 0.5 s, an eighth of 0.25 s and a sixteenth of 0.125 s. At 60 fps those are 30, 15 and 7.5 frames. 50 of the 56 major cues sit exactly on it. The exceptions are deliberate: the opening pop (0.15 s) and the dive into the o (17.35 s) are timed by feel, and the bounce fills subdivide to 1/32 and 1/64 notes, as real drum fills do. That is why the piece feels musical even when nothing is on screen but a dot.</p>
+    </div>
+    <div>
+      <pre><span class="c">// src/core.js · the single source of truth</span>
+<span class="k">const</span> CUE = {
+  dotPop: <span class="n">0.15</span>, launch: <span class="n">0.45</span>,
+  bounces: [<span class="n">1.0</span>, <span class="n">1.5</span>, <span class="n">1.75</span>, <span class="n">1.875</span>, <span class="n">1.9375</span>],
+  split1: <span class="n">2.25</span>, split2: <span class="n">2.5</span>, burst: <span class="n">2.75</span>, weLock: <span class="n">4.0</span>,
+  make: [<span class="n">6.5</span>, <span class="n">7.0</span>, <span class="n">7.5</span>, <span class="n">8.0</span>], hop: <span class="n">8.5</span>, hopLand: <span class="n">9.0</span>,
+  motion: <span class="n">10.0</span>, slam: <span class="n">12.0</span>, build: <span class="n">14.0</span>, collapse: <span class="n">15.75</span>,
+  without: <span class="n">16.0</span>, ping: <span class="n">16.5</span>, portal: <span class="n">17.35</span>,
+  code: <span class="n">18.0</span>, locks: [<span class="n">19.0</span>, <span class="n">19.25</span>, <span class="n">19.5</span>, <span class="n">19.75</span>],
+  slash: <span class="n">20.0</span>, fall: <span class="n">20.25</span>, straighten: <span class="n">21.5</span>,
+  final: [<span class="n">22.0</span>, <span class="n">22.5</span>, <span class="n">23.0</span>, <span class="n">23.5</span>, <span class="n">24.0</span>],
+  finalBounces: [<span class="n">24.5</span>, <span class="n">25.0</span>, <span class="n">25.25</span>, <span class="n">25.375</span>, <span class="n">25.4375</span>],
+  reflow: <span class="n">26.0</span>, asterisk: <span class="n">27.25</span>, typeStart: <span class="n">27.6</span>,
+  fadeOut: <span class="n">29.0</span>, blink: <span class="n">29.75</span>,
+};
+
+<span class="c">// picture:  const d = dropDot(t)        → reads CUE.bounces</span>
+<span class="c">// sound:    bounceKit(CUE.bounces)      → kicks on the same values</span></pre>
+    </div>
+  </div>
+  <div class="folio">06</div>
+</section>
+
+<!-- 7 · MOTION TOOLKIT -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Motion toolkit</span></div>
+  <h2>Physics you can scrub</h2>
+  <div class="cols c3">
+    <div>
+      <h3>Rule 4: time in, frame out</h3>
+      <p>Nothing in the film is simulated step by step. Each element’s position is a closed-form function of <span class="it">t</span>. That is what makes the timeline scrubbable in the browser, lets the offline renderer jump to any frame, and makes true motion blur possible: to blur a frame I sample 24 instants inside the shutter and average them.</p>
+      <p>Randomness is deterministic too. Particle angles, glitch slices and code-chatter blips come from an integer hash of an index, so frame 1,206 is identical on every render.</p>
+      <h3 style="margin-top:4mm">Easing, by job</h3>
+      <ul class="list small">
+        <li><b>outExpo / outQuart</b> Entrances and draw-ons. Fast attack on the beat, long settle.</li>
+        <li><b>inQuart / inExpo</b> Exits and the portal zoom. Accelerate away.</li>
+        <li><b>inOutBack</b> The reflow. A small pull back before travelling (anticipation built into the curve).</li>
+        <li><b>outBack</b> Pops. A touch of overshoot so things arrive with confidence.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Analytic spring</h3>
+      <pre><span class="k">function</span> spring(dt, zeta = <span class="n">0.4</span>, f = <span class="n">2.2</span>) {
+  <span class="k">const</span> w = <span class="n">2</span> * PI * f;
+  <span class="k">const</span> wd = w * sqrt(<span class="n">1</span> - zeta * zeta);
+  <span class="k">return</span> <span class="n">1</span> - exp(-zeta * w * dt) *
+    (cos(wd * dt) + (zeta * w / wd) * sin(wd * dt));
+}</pre>
+      <p class="small" style="margin-top:3mm">An under-damped harmonic oscillator solved exactly. It gives overshoot and settle (follow-through) without any state. Used for the MOTION slam, the wave amplitude, the bracket slide-ins and the asterisk’s arms, each with its own damping and frequency.</p>
+      <h3 style="margin-top:4mm">Keyframed ballistics</h3>
+      <pre>v0 = (y1 - y0) / T - g * T / <span class="n">2</span>
+y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
+      <p class="small" style="margin-top:3mm">Instead of simulating gravity I specify where the dot must be and when, and solve for the launch velocity. Gravity stays physically constant (6,400 px/s²) while every landing hits its cue exactly.</p>
+    </div>
+    <div>
+      <h3>The bounce is a drum fill</h3>
+      <p class="small">Bounce intervals halve: 0.5, 0.25, 0.125, 0.0625 s. Under constant gravity a bounce’s height is <span class="it">gT²/8</span>, so heights quarter: 200, 50, 12.5, 3 px. The picture is physically right, and the sound is a textbook accelerating fill. The kick for each landing gets quieter and slightly higher-pitched, like a real ball on a real floor.</p>
+      <h3 style="margin-top:4mm">Squash &amp; stretch, volume kept</h3>
+      <p class="small">Stretch comes from speed (<code>1 + min(0.45, |v|/5200)</code>) and squash from impact (a decaying cosine). Width is always the inverse of height, so the dot never gains or loses mass. The shape is anchored at its contact point so it squashes into the floor rather than floating above it. During the hop between A and E, the stretch is rotated to follow the velocity vector along the arc.</p>
+      <h3 style="margin-top:4mm">Echoes, not just blur</h3>
+      <p class="small">MOTION’s letters leave five flamingo echoes sampled 28 ms apart. They trace the letters’ arcs and fade as the letters decelerate, so the trail length is itself a speedometer.</p>
+    </div>
+  </div>
+  <div class="folio">07</div>
+</section>
+
+<!-- 8 · SCENES 1–2 -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Scene by scene · 1–2</span></div>
+  <div class="cols c2">
+    <div>
+      <h3><span class="dot"></span>&nbsp; 0:00–0:02 · The drop</h3>
+      <div class="strips"><img src="img/s-0.90.jpg"><img src="img/s-1.00.jpg"></div>
+      <p class="cap">0.90 s falling, stretched along its velocity · 1.00 s impact: squash, ripple, ground line</p>
+      <p class="small" style="margin-top:3mm"><b>Picture.</b> A dot pops in on a back ease (0.15 s), crouches (anticipation, 0.30–0.45 s), hops, and falls under gravity to land exactly on beat 3. Each landing throws an elliptical ripple across an implied floor, and the first draws a hairline horizon that fades out.</p>
+      <p class="small"><b>Sound.</b> A G6 blip for the pop, a rising sine for the jump, then five kicks with clacks on the landings: 1.0, 1.5, 1.75, 1.875, 1.9375 s. The ball plays its own fill into the downbeat of bar 2.</p>
+      <p class="small"><span class="tag">Timing</span><span class="tag">Anticipation</span><span class="tag">Slow in/out</span><span class="tag">Squash &amp; stretch</span></p>
+    </div>
+    <div>
+      <h3><span class="dot"></span>&nbsp; 0:02–0:06 · WE</h3>
+      <div class="strips"><img src="img/s-2.60.jpg"><img src="img/s-3.40.jpg"></div>
+      <p class="cap">2.60 s mitosis, four cells · 3.40 s swarm curving home, left to right</p>
+      <p class="small" style="margin-top:3mm"><b>Picture.</b> The dot divides on the beat, 1 → 2 → 4, necks pinching like cells. At 2.75 s it bursts into 1,888 particles. Their targets were sampled from the word WE rasterised offscreen. Each particle flies out on a swirling elliptical orbit, then homes in along an arc, launched in a left-to-right stagger so the word appears to write itself. At 4.0 s the dots flash into solid type with a flamingo outline echo, then the camera pushes in slowly. The letters crouch and leave upward while a liquid chalk wipe rises.</p>
+      <p class="small"><b>Sound.</b> C5 and G5 plucks on the splits, a burst, 26 scattered pentatonic blips (one per cluster of particles), a riser, then kick, snare, clap and crash on the lock. The groove starts here.</p>
+      <p class="small"><span class="tag">Secondary action</span><span class="tag">Arcs</span><span class="tag">Stagger</span><span class="tag">Staging</span></p>
+    </div>
+  </div>
+  <div class="folio">08</div>
+</section>
+
+<!-- 9 · SCENES 3–4 -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Scene by scene · 3–4</span></div>
+  <div class="cols c2">
+    <div>
+      <h3><span class="dot"></span>&nbsp; 0:06–0:10 · MAKE</h3>
+      <div class="strips"><img src="img/s-7.30.jpg"><img src="img/s-9.85.jpg"></div>
+      <p class="cap">7.30 s the dot wedged in the A’s counter · 9.85 s ultramarine iris opening from the dot</p>
+      <p class="small" style="margin-top:3mm"><b>Picture.</b> A blueprint grid draws out from the centre, labelled like a type specimen (CAP 360, MID 540, BASE 720, STROKE 76). Then M, A, K and E are drawn one per beat as continuous pen strokes. The dot drops into the A where the crossbar should be. Its resting height was solved so it wedges exactly between the A’s inner edges. At 8.5 s it crouches and hops over the K, clearing it by about a pixel, onto the tip of E’s middle bar. That bar then shoots out to become the horizon while everything else retracts, and an ultramarine iris opens from the dot.</p>
+      <p class="small"><b>Sound.</b> Ticking hats as the grid draws, woodblock clacks tuned upward per glyph, a two-part clink for the dot, a sine hop and boop, a zip for the line and a riser into the cut.</p>
+      <p class="small"><span class="tag">Staging</span><span class="tag">Rhythm</span><span class="tag">Appeal</span><span class="tag">Match cut</span></p>
+    </div>
+    <div>
+      <h3><span class="dot"></span>&nbsp; 0:10–0:16 · MOTION</h3>
+      <div class="strips"><img src="img/s-11.00.jpg"><img src="img/s-15.40.jpg"></div>
+      <p class="cap">11.00 s letters riding the wave with echoes · 15.40 s the build: tilt, zoom, shear, flash</p>
+      <p class="small" style="margin-top:3mm"><b>Picture.</b> The horizon comes alive as a travelling sine wave; the dot surfs it leftward and hops out. The letters of MOTION follow, sitting on the wave and rotating to its tangent. They land on consecutive sixteenths, then the wave flattens and they settle one after another. At 12.0 s: the slam. Six marquee rows open like blinds and scroll in alternating directions, with speed spiking on every kick. From 14.0 s the speed doubles every half-second while the camera tilts and pushes in and the rows shear with their own velocity. At 15.75 s everything decelerates like tape and collapses to a single line.</p>
+      <p class="small"><b>Sound.</b> Impact and crash, full groove, a C–D–E–G–A–C arpeggio as the letters land, the slam, a snare roll from 8ths to 16ths to 32nds under a riser, and a tape-stop pitch dive into silence.</p>
+      <p class="small"><span class="tag">Path animation</span><span class="tag">Overlapping action</span><span class="tag">Repetition</span><span class="tag">Exaggeration</span></p>
+    </div>
+  </div>
+  <div class="folio">09</div>
+</section>
+
+<!-- 10 · SCENES 5–6 -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Scene by scene · 5–6</span></div>
+  <div class="cols c2">
+    <div>
+      <h3><span class="dot"></span>&nbsp; 0:16–0:18 · without</h3>
+      <div class="strips"><img src="img/s-17.20.jpg"><img src="img/s-17.80.jpg"></div>
+      <p class="cap">17.20 s the dot is the tittle of the i · 17.80 s diving into the ink of the o</p>
+      <p class="small" style="margin-top:3mm"><b>Picture.</b> A hard cut to chalk and stillness. The line from MOTION switches off like an old television. “without” resolves letter by letter from blur, with its tracking tightening. The <span class="it">i</span>’s own tittle is masked out and the dot drops in to take its place. To find the tittle, the renderer rasterises the glyph and flood-fills its top-most blob. Then the camera dives into the <span class="it">o</span>. The zoom target is the deepest point inside the glyph’s ink, found with a distance transform, so the stroke fills the screen and becomes the next scene’s ground.</p>
+      <p class="small"><b>Sound.</b> The drums drop out completely. There is one glass ping (E6 with inharmonic partials), some air, a tiny tick as the dot lands, and a riser into the cut. Two seconds of near-silence make the next hit feel twice as loud.</p>
+      <p class="small"><span class="tag">Contrast</span><span class="tag">Silence as design</span><span class="tag">Transition through form</span></p>
+    </div>
+    <div>
+      <h3><span class="dot"></span>&nbsp; 0:18–0:22 · CODE</h3>
+      <div class="strips"><img src="img/s-19.60.jpg"><img src="img/s-20.60.jpg"></div>
+      <p class="cap">19.60 s decoding, selection highlight · 20.60 s struck through and falling</p>
+      <p class="small" style="margin-top:3mm"><b>Picture.</b> The backdrop is a syntax-highlighted editor showing excerpts of the film’s own source, including <code>g.fillText('without', CX, CY); // allegedly</code>. The brackets spring in, the letters scramble and lock on consecutive eighths, each flashing a butter selection highlight, and a caret blinks on the beat. At 20.0 s a flamingo bar slashes through. Every glyph, and then every line of code, falls with its own spin. The bar hangs in mid-air for a beat, in the cartoon tradition, before straightening and exploding into a two-layer wipe.</p>
+      <p class="small"><b>Sound.</b> Boom and glitch burst, bit-crushed hats, square-wave chatter that thins as letters lock, four rising locks, a slash, seven falling bloops and two whooshes for the wipe.</p>
+      <p class="small"><span class="tag">Rhythm</span><span class="tag">Impact</span><span class="tag">Gravity</span><span class="tag">Comic timing</span><span class="tag">Layered wipe</span></p>
+    </div>
+  </div>
+  <div class="folio">10</div>
+</section>
+
+<!-- 11 · SCENES 7–8 -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Scene by scene · 7–8</span></div>
+  <div class="cols c2">
+    <div>
+      <h3><span class="dot"></span>&nbsp; 0:22–0:26 · The claim</h3>
+      <div class="strips tall"><img src="img/s-23.10.jpg"><img src="img/s-25.80.jpg"></div>
+      <p class="cap">23.10 s MOTION slams in, stretched and sheared by its own speed · 25.80 s the lockup</p>
+      <p class="small" style="margin-top:3mm"><b>Picture.</b> A Swiss-style stacked lockup, and each word gets its own verb on its own beat. WE and MAKE rise through masks, letter by letter. MOTION slides in from off-screen, stretched and sheared in proportion to its speed. <span class="it">without</span> whispers in from blur. CODE decodes. Then the dot drops from the top of frame and bounces into place as the full stop, with the same physics and timings as the opening.</p>
+      <p class="small"><b>Sound.</b> Five hits: two snares with clacks, a crash and impact for MOTION, the glass ping again for <span class="it">without</span>, a glitch for CODE. Then the opening drum fill plays again, note for note, as the dot bounces.</p>
+      <p class="small"><span class="tag">Hierarchy</span><span class="tag">Callback</span></p>
+    </div>
+    <div>
+      <h3><span class="dot"></span>&nbsp; 0:26–0:30 · The fine print</h3>
+      <div class="strips tall"><img src="img/s-26.40.jpg"><img src="img/s-28.80.jpg"></div>
+      <p class="cap">26.40 s FLIP reflow under a falling ink curtain · 28.80 s the asterisk and its footnote</p>
+      <p class="small" style="margin-top:3mm"><b>Picture.</b> Every word travels from its lockup position and size to its place in a single-line sentence, on alternating arcs with a small back-ease pull, while a liquid ink curtain falls. At 27.25 s the full stop rises to superscript and grows six arms: it is now an asterisk. The footnote types itself at 48 characters a second: <span class="it">“*Except this one. This one is 1,840 lines of code.”</span> Then everything fades, and the asterisk drifts to centre, retracts its arms, turns back into the opening dot and blinks out.</p>
+      <p class="small"><b>Sound.</b> A reflow whoosh, a sproing (a frequency-modulated sine) for the asterisk, one tick per typed character, a soft final kick with a low glass tone, and the opening blip to close.</p>
+      <p class="small"><span class="tag">FLIP reflow</span><span class="tag">Morph</span><span class="tag">Bookend</span></p>
+    </div>
+  </div>
+  <div class="folio">11</div>
+</section>
+
+<!-- 12 · SOUND DESIGN -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Sound design</span></div>
+  <h2>A drum kit made of maths</h2>
+  <div class="cols c21">
+    <div>
+      <table class="small">
+        <tr><th>Voice</th><th>Recipe</th><th>Used for</th></tr>
+        <tr><td><b>Kick</b></td><td>Sine swept 170 → 46 Hz in 90 ms, exponential decay, 2.5 kHz noise click</td><td>Beats, bounces (pitch rises per bounce)</td></tr>
+        <tr><td><b>Snare</b></td><td>Band-passed noise at 1.9 kHz + triangle 200 → 150 Hz body</td><td>Backbeat, the build’s roll</td></tr>
+        <tr><td><b>Clap</b></td><td>Three noise bursts 11 ms apart through a 1.2 kHz band-pass, then a tail</td><td>Locks, slam, slash</td></tr>
+        <tr><td><b>Hats</b></td><td>High-passed noise, 35 ms closed / 240 ms open; bit-crushed in CODE</td><td>16th-note motor</td></tr>
+        <tr><td><b>Clack</b></td><td>Sine + triangle at 2.71× (woodblock), low sine thump underneath</td><td>MAKE glyphs, tittle, bounces</td></tr>
+        <tr><td><b>Pluck</b></td><td>Triangle + octave sine through a closing low-pass, ping-pong delay</td><td>Mitosis, the MOTION arpeggio</td></tr>
+        <tr><td><b>Glass</b></td><td>Partials at 1, 2.76, 5.4, 8.93× with staggered decays, heavy reverb</td><td>without, the claim, the ending</td></tr>
+        <tr><td><b>Whoosh</b></td><td>Noise through a swept band-pass with a stereo pan ramp</td><td>Exits, wipes, slides</td></tr>
+        <tr><td><b>Riser</b></td><td>Band-pass sweep 300 Hz → 9 kHz + detuned saw rising three octaves</td><td>Into every major cut</td></tr>
+        <tr><td><b>Impact</b></td><td>Sub sweep 70 → 26 Hz, low-passed noise, kick</td><td>Scene arrivals</td></tr>
+        <tr><td><b>Tape stop</b></td><td>Saw chord dropping to 8% pitch under a closing filter</td><td>The collapse at 15.75 s</td></tr>
+        <tr><td><b>Glitch</b></td><td>Random square blips every ~17–40 ms through a 5-step bit-crusher</td><td>CODE arrivals and slash</td></tr>
+        <tr><td><b>Sproing</b></td><td>Sine with a 22 Hz vibrato whose depth decays from 120 Hz to 2 Hz</td><td>The asterisk</td></tr>
+        <tr><td><b>Tick</b></td><td>12 ms band-passed noise click + a tiny sine</td><td>Grid lines, typewriter</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Signal chain</h3>
+      <div class="mono" style="font-size:7pt; line-height:1.4; display:grid; gap:1.6mm">
+        <div style="padding:2mm 3mm; border:1px solid var(--rule); border-radius:1mm">686 voices <span style="color:var(--muted)">→ pan → dry / reverb send / delay send</span></div>
+        <div style="padding:2mm 3mm; border:1px solid var(--rule); border-radius:1mm">Convolution reverb <span style="color:var(--muted)">2.8 s generated impulse, deterministic noise ^3.4 decay</span></div>
+        <div style="padding:2mm 3mm; border:1px solid var(--rule); border-radius:1mm">Ping-pong delay <span style="color:var(--muted)">dotted eighth (375 ms), 38% feedback, 3.2 kHz low-pass</span></div>
+        <div style="padding:2mm 3mm; border:1px solid var(--rule); border-radius:1mm">Drive +2.9 dB <span style="color:var(--muted)">→</span> bus compressor <span style="color:var(--muted)">−16 dB, 3.5:1, 4 ms / 200 ms</span></div>
+        <div style="padding:2mm 3mm; border:1px solid var(--rule); border-radius:1mm">Limiter <span style="color:var(--muted)">−2 dB, 20:1, 1 ms</span> → master fade 29.55–30 s</div>
+      </div>
+      <p class="small" style="margin-top:4mm">The score renders in an <code>OfflineAudioContext</code> faster than real time. The browser player plays that buffer and slaves its picture clock to the audio clock, compensating for output latency. The offline renderer exports the same buffer as a 48 kHz, 16-bit WAV for the master. So the sound in the MP4 and in the browser is sample-identical.</p>
+      <p class="small">Tonal material stays in C major pentatonic, so accents from different scenes never clash, and the kicks’ tails double as the bass.</p>
+    </div>
+  </div>
+  <div class="folio">12</div>
+</section>
+
+<!-- 13 · SPECTROGRAM -->
+<section class="page dark">
+  <div class="run"><span>We Make Motion* — Process</span><span>Sound, verified</span></div>
+  <h2 style="color:var(--chalk)">Reading the score back</h2>
+  <p style="color:rgba(241,239,233,.8); max-width:120ch">I can’t listen to audio, so I checked it the way an engineer would: loudness measurement and a spectrogram of the rendered WAV read against the cue sheet. Time runs left to right across 30 s and frequency is logarithmic, 20 Hz to 16 kHz.</p>
+  <div style="position:relative; margin-top:14mm">
+    <img src="img/spectrum.jpg" style="display:block; width:100%; height:78mm; object-fit:fill; border-radius:1mm">
+    <div style="position:absolute; left:3.3333333333333335%; top:-12.5mm; height:12.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">bounce fill</div><div style="position:absolute; left:13.333333333333334%; top:-6.5mm; height:6.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">WE lock</div><div style="position:absolute; left:21.666666666666668%; top:-12.5mm; height:12.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">MAKE clacks</div><div style="position:absolute; left:33.33333333333333%; top:-6.5mm; height:6.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">impact</div><div style="position:absolute; left:35.833333333333336%; top:-12.5mm; height:12.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">arpeggio</div><div style="position:absolute; left:40%; top:-6.5mm; height:6.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">slam</div><div style="position:absolute; left:46.666666666666664%; top:-12.5mm; height:12.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">snare roll</div><div style="position:absolute; left:52.5%; top:-6.5mm; height:6.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">tape stop</div><div style="position:absolute; left:55.00000000000001%; top:-12.5mm; height:12.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">glass ping</div><div style="position:absolute; left:60%; top:-6.5mm; height:6.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">boom + glitch</div><div style="position:absolute; left:66.66666666666666%; top:-12.5mm; height:12.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">slash</div><div style="position:absolute; left:67.5%; top:-6.5mm; height:6.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">falling bloops</div><div style="position:absolute; left:76.66666666666667%; top:-12.5mm; height:12.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">MOTION</div><div style="position:absolute; left:81.66666666666667%; top:-6.5mm; height:6.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">fill callback</div><div style="position:absolute; left:92%; top:-12.5mm; height:12.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">typewriter</div><div style="position:absolute; left:99.16666666666667%; top:-6.5mm; height:6.5mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">blip</div>
+  </div>
+  <div class="cols c3" style="margin-top:6mm; flex:0">
+    <p class="small" style="color:rgba(241,239,233,.8)"><b>Visible as designed:</b> the accelerating bounce fill at 1–2 s; the arpeggio staircase around 10.8–11.4 s; the snare roll thickening into the tape-stop dive at 15.75 s.</p>
+    <p class="small" style="color:rgba(241,239,233,.8)">The near-empty band at 16–18 s is the silence, with the glass ping ringing through it as a horizontal line. The falling bloops at 20.25 s show as descending diagonals.</p>
+    <p class="small" style="color:rgba(241,239,233,.8)"><b>Loudness:</b> first pass −17.0 LUFS, a little shy, so I added bus drive (−15.9). Charting the energy curve for this document then showed the “silence” peaking at −9.8 LUFS, because the glass ping sits where hearing is most sensitive. The pings came down 7–10 dB. Final: −16.4 LUFS integrated, −0.8 dBFS peak, 3.3 LU range.</p>
+  </div>
+  <div class="folio">13</div>
+</section>
+
+<!-- 14 · RENDERING -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Rendering pipeline</span></div>
+  <h2>From source to master</h2>
+  <div class="mono" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:3mm; font-size:6.8pt; line-height:1.45; margin-bottom:7mm">
+    <div style="background:var(--ink); color:var(--chalk); padding:3mm; border-radius:1mm"><b>src/*.js</b><br>core, scenes, audio, player</div>
+    <div style="background:var(--ink); color:var(--chalk); padding:3mm; border-radius:1mm"><b>build.mjs</b><br>stitched into one index.html (1,840 lines)</div>
+    <div style="background:var(--ultra); color:var(--chalk); padding:3mm; border-radius:1mm"><b>Headless Chromium ×3</b><br>fonts inlined, same page, same code</div>
+    <div style="background:var(--ultra); color:var(--chalk); padding:3mm; border-radius:1mm"><b>24 sub-frames / frame</b><br>float-summed → PNG; WAV from the offline audio context</div>
+    <div style="background:var(--flamingo); color:var(--ink); padding:3mm; border-radius:1mm"><b>ffmpeg</b><br>film grain, x264 CRF 18 High, AAC 256k, faststart</div>
+  </div>
+  <div class="cols c2">
+    <div>
+      <h3>Real motion blur</h3>
+      <p class="small">A 180° shutter at 60 fps is open for 1/120 s. For every frame the renderer draws the scene at 24 evenly spaced instants inside that window and averages them in 32-bit float. Fast elements smear exactly as a real camera would record them, slow ones stay sharp, and static ones are untouched. That’s 43,200 full scene renders for 1,800 frames.</p>
+      <p class="small">In the browser, where there’s no budget for 24 renders a frame, the particle scene fakes blur with velocity streaks instead. The switch is one flag (<code>RO.streaks</code>).</p>
+      <h3 style="margin-top:4mm">Determinism is what makes it work</h3>
+      <p class="small">Three browser workers render interleaved frames (0, 3, 6… / 1, 4, 7… / 2, 5, 8…) completely independently, because no frame depends on the one before it. Fonts are embedded as data so every worker lays out identical glyphs.</p>
+    </div>
+    <div>
+      <h3>Numbers</h3>
+      <table class="small">
+        <tr><td>Frames · sub-frames</td><td class="m">1,800 · 43,200</td></tr>
+        <tr><td>Shutter</td><td class="m">180° (1/120 s), 24 samples</td></tr>
+        <tr><td>Workers</td><td class="m">3 headless Chromium pages, 4 cores</td></tr>
+        <tr><td>Render wall-clock (frames)</td><td class="m">13 min</td></tr>
+        <tr><td>Video</td><td class="m">H.264 High, CRF 18, yuv420p, grain-tuned</td></tr>
+        <tr><td>Audio</td><td class="m">48 kHz WAV → AAC 256 kb/s</td></tr>
+        <tr><td>Master size</td><td class="m">15.8 MB</td></tr>
+      </table>
+      <p class="small" style="margin-top:4mm">Resolution is not baked in. Everything is drawn in a 1920×1080 coordinate space and scaled to the canvas, so the same code renders 4K or 8K masters with no loss. The cost is render time, which scales with pixel count.</p>
+    </div>
+  </div>
+  <div class="folio">14</div>
+</section>
+
+
+<!-- 15 · PROGRESSION: STAGES -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Progression to final · 1</span></div>
+  <h2>How it got made, in order</h2>
+  <div class="cols c2" style="gap:12mm">
+    <table class="small">
+      <tr><th>Stage</th><th>What happened</th></tr>
+      <tr><td class="m">00 Brief</td><td>Read the brief, wrote the self-prompt and the rules on page 3, and planned all eight scenes on the beat grid on paper before writing any code: every hit, entrance and cut given a timestamp.</td></tr>
+      <tr><td class="m">01 Toolchain</td><td>Found headless Chromium and Playwright in the environment. Installed an ffmpeg build with x264 and AAC. Downloaded the three typefaces so offline renders lay out identically to the browser.</td></tr>
+      <tr><td class="m">02 Engine</td><td>Wrote the core: frame and tempo constants, the palette, easing library, analytic spring, keyframed ballistics, hash noise, the cue sheet, the camera-impact list, and glyph analysis (rasterise, distance transform, flood fill).</td></tr>
+      <tr><td class="m">03 Scenes</td><td>Built the eight scenes in three passes (drop, WE and MAKE; MOTION and without; CODE, the claim and the fine print), then the HUD, glitch pass, compositor and motion-blur accumulator.</td></tr>
+      <tr><td class="m">04 Score</td><td>Synthesised the kit (14 voice types) and wrote the score against the same cue sheet, then set up the mix bus: reverb, delay, bit-crusher, compressor and limiter.</td></tr>
+      <tr><td class="m">05 Player &amp; renderer</td><td>Wrote the in-browser player (audio-clocked playback, scrubber, dope sheet, principles overlay), a build step that stitches the sources into one page, and the offline renderer.</td></tr>
+    </table>
+    <table class="small">
+      <tr><th>Stage</th><th>What happened</th></tr>
+      <tr><td class="m">06 First look</td><td>Rendered 48 stills across the timeline as two contact sheets (next page). The whole film worked end to end on the first render. Review found two picture bugs and one choreography change.</td></tr>
+      <tr><td class="m">07 Full-size pass</td><td>Inspected frames at 1:1. Found the variable font’s overlapping contours showing in the outline rows, and the HUD colliding with the marquee. Fixed both.</td></tr>
+      <tr><td class="m">08 Sound check</td><td>Measured loudness (−17.0 LUFS, a bit shy) and added bus drive (−15.9 LUFS). Verified every cue against a spectrogram.</td></tr>
+      <tr><td class="m">09 Blur test</td><td>An 8-sample blur stepped visibly on the fastest move (MOTION entering at about 17,000 px/s). Rebuilt the accumulator in float at 24 samples.</td></tr>
+      <tr><td class="m">10 UI pass</td><td>Screenshotted the player at desktop and phone widths. Fixed a hidden-element rule, ambiguous timecodes, colliding scrubber labels and an oversized play button on phones. The player now idles instead of redrawing when paused.</td></tr>
+      <tr><td class="m">11 Master</td><td>Published the player. Rendered 1,800 frames with 24-sample blur and muxed the master. Re-shot the last 2.5 s so the footnote quotes the final line count. The first encode was 353 MB because film grain is incompressible noise. Lighter grain at CRF 18 brought it to about 16 MB with no visible loss.</td></tr>
+      <tr><td class="m">12 Mix fix</td><td>Charting loudness for this document showed the “silence” at 16 s peaking at −9.8 LUFS because of the glass ping. Lowered the pings 7–10 dB. A renderer bug wiped the frame cache during the audio-only pass, so the master was re-rendered in full. The frames are deterministic, so they came back identical.</td></tr>
+      <tr><td class="m">13 This document</td><td>Laid out in HTML in the film’s own typefaces, printed to PDF with the same headless browser, then proofed page by page.</td></tr>
+    </table>
+  </div>
+  <div class="folio">15</div>
+</section>
+
+<!-- 16 · PROGRESSION: FIRST PASS -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Progression to final · 2</span></div>
+  <div class="cols" style="grid-template-columns: 1.55fr 1fr; gap:8mm">
+    <figure style="display:flex; flex-direction:column; justify-content:center"><img src="img/sheet-first.jpg"><p class="cap">First-pass contact sheet, 0.3–17.4 s, one frame per tile, rendered before any fixes. The rows at 12.4 and 13.2 s show the pink-fill bug.</p></figure>
+    <div>
+      <h2 style="font-size:17pt">First render, first notes</h2>
+      <p class="small">The first full render already worked end to end: every scene, transition and cue in place. The review notes were about craft and one real bug.</p>
+      <ul class="list small">
+        <li><b>Bug</b> Filled marquee rows came out flamingo. The helper that draws the separator dots left its fill colour set, so every word after the first dot inherited it. Fixed by setting the fill per word. Pink rows also broke Rule 7: flamingo belongs to the dot.</li>
+        <li><b>Timing</b> The collapse used an exponential ease-in, so the rows didn’t visibly move until the last three frames. Switched to a quartic ease-in so the viewer sees the squeeze happen.</li>
+        <li><b>Choreography</b> On the back-half sheet, the ending blinked out at the right-hand end of the sentence. The film opens on a centred dot, so it should close on one. The asterisk now drifts home, turns back into the opening dot, and blinks out.</li>
+        <li><b>Kept</b> The particle swarm, the MAKE construction and the zoom into the ink worked as planned and were left alone.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="folio">16</div>
+</section>
+
+<!-- 17 · PROGRESSION: BEFORE / AFTER -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Progression to final · 3</span></div>
+  <h2 style="font-size:17pt; margin-bottom:3mm">Before and after</h2>
+  <div class="ba"><figure><img src="img/pb-pink.jpg"><div class="lbl">Before · 12.4 s</div></figure><figure><img src="img/pa-pink.jpg"><div class="lbl">After · 12.4 s</div></figure>
+    <p class="small" style="margin:0"><b>Leaking fill colour.</b> The helper that draws each flamingo separator dot changed the fill colour and never changed it back, so every word after the first dot turned pink. Now each word sets its own fill. The before frame is a thumbnail from the first contact sheet.</p></div>
+  <div class="ba"><figure><img src="img/pb-outline.jpg"><div class="lbl">Before · 13.2 s</div></figure><figure><img src="img/pa-outline.jpg"><div class="lbl">After · 13.2 s</div></figure>
+    <p class="small" style="margin:0"><b>Overlapping contours.</b> Variable fonts build letters from overlapping shapes. Filled, that’s invisible; stroked, the overlaps show as stray lines inside M, N and T. The fix strokes at double width, then fills with the ground colour so only the outer half of each stroke survives.</p></div>
+  <div class="ba"><figure><img src="img/pb-blur.jpg"><div class="lbl">Before · 8 samples</div></figure><figure><img src="img/pa-blur.jpg"><div class="lbl">After · 24 samples</div></figure>
+    <p class="small" style="margin:0"><b>Stepped motion blur.</b> MOTION enters at roughly 17,000 px/s, about 140 px of travel inside one shutter. Eight samples left visible copies. Twenty-four samples, summed in 32-bit float so the average doesn’t band, give a continuous smear.</p></div>
+  <div class="ba"><figure><img src="img/pb-end.jpg"><div class="lbl">Before · 29.62 s</div></figure><figure><img src="img/pa-end.jpg"><div class="lbl">After · 29.62 s</div></figure>
+    <p class="small" style="margin:0"><b>The bookend.</b> The asterisk used to blink out where the sentence ended, off to the right. The film opens on a centred dot, so now the asterisk drifts home, shrinks back to the opening dot’s size, and blinks out with the same blip it started with.</p></div>
+  <div class="folio">17</div>
+</section>
+
+<!-- 18 · PROGRESSION: PLAYER -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Progression to final · 4</span></div>
+  <div class="cols" style="grid-template-columns: 1.6fr .55fr .75fr; gap:7mm">
+    <figure><img src="img/ui-desk.jpg" style="max-height:170mm; object-fit:contain; object-position:top"><p class="cap">The published player at 1440 px, paused on the poster frame.</p></figure>
+    <figure><img src="img/ui-phone.jpg" style="max-height:170mm; object-fit:contain; object-position:top"><p class="cap">At 390 px.</p></figure>
+    <div>
+      <h2 style="font-size:16pt">The player</h2>
+      <p class="small">The browser version is not a video. It renders the film live on a canvas at the viewer’s resolution, with the soundtrack synthesised on load. Picture is slaved to the audio clock, so it stays in sync.</p>
+      <ul class="list small">
+        <li><b>Transport</b> Play, SMPTE timecode, bar and beat, a scrubber drawn from the real waveform with bar lines and scene marks.</li>
+        <li><b>Dope sheet</b> Every scene with its picture and sound notes; click to jump.</li>
+        <li><b>Principles</b> An overlay that names the technique on screen as it happens (29 captions).</li>
+        <li><b>Keys</b> Space, ← → by one beat, Home.</li>
+      </ul>
+      <h3 style="margin-top:4mm">UI fixes from review</h3>
+      <p class="small">Hidden elements forced hidden; timecodes changed from SS:FF to m:ss; short scrubber labels; a smaller play button on phones; the canvas idles when paused.</p>
+    </div>
+  </div>
+  <div class="folio">18</div>
+</section>
+
+<!-- 19 · FINAL -->
+<section class="page dark">
+  <div class="run"><span>We Make Motion* — Process</span><span>Final</span></div>
+  <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4mm"><h2 style="margin:0; color:var(--chalk)">The final cut, in 24 frames</h2><span class="mono" style="font-size:6.6pt; color:rgba(241,239,233,.6); letter-spacing:.06em">FROM THE MASTER · 24-SAMPLE MOTION BLUR</span></div>
+  <figure style="flex:1; display:flex; align-items:center"><img src="img/final-sheet.jpg" style="max-height:160mm; object-fit:contain"></figure>
+  <div class="folio">19</div>
+</section>
+
+<!-- 20 · APPENDIX -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Appendix</span></div>
+  <h2>Appendix</h2>
+  <div class="cols c3">
+    <div>
+      <h3>Files</h3>
+      <table class="small">
+        <tr><td class="m">we-make-motion.mp4</td><td>The master</td></tr>
+        <tr><td class="m">index.html</td><td>The film and player in one page</td></tr>
+        <tr><td class="m">src/core.js</td><td>Constants, maths, cue sheet, glyph tools</td></tr>
+        <tr><td class="m">src/scenes-1..3.js</td><td>The eight scenes, HUD, compositor, blur</td></tr>
+        <tr><td class="m">src/audio.js</td><td>Kit, score, mix, WAV encoder</td></tr>
+        <tr><td class="m">src/player.js</td><td>Transport, dope sheet, captions</td></tr>
+        <tr><td class="m">build.mjs</td><td>Stitches src into index.html</td></tr>
+        <tr><td class="m">render/render.cjs</td><td>Offline renderer and mux</td></tr>
+        <tr><td class="m">docs/process/</td><td>This document’s source</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Rebuild</h3>
+      <pre>node build.mjs
+pip install imageio-ffmpeg
+node render/render.cjs
+<span class="c"># preview stills</span>
+node render/render.cjs --stills 4,12.5
+<span class="c"># re-shoot a range, re-mux</span>
+node render/render.cjs --range 1650,1800
+<span class="c"># this document</span>
+node docs/process/build-pdf.cjs</pre>
+      <h3 style="margin-top:4mm">Credits</h3>
+      <p class="small">Typefaces: Unbounded, Bodoni Moda and Martian Mono, all from Google Fonts under the SIL Open Font License. Everything else, including every sound, was generated.</p>
+    </div>
+    <div>
+      <h3>Limits, honestly</h3>
+      <ul class="list small">
+        <li><b>Listening</b> I can’t hear the mix. It was verified by measurement and spectrogram, so the balance deserves a pair of human ears.</li>
+        <li><b>Live playback</b> The browser version renders in real time, so very old phones may drop frames. The MP4 is the reference.</li>
+        <li><b>Variable fonts</b> Canvas can’t animate font axes smoothly, so weight and width changes were done with transforms instead.</li>
+      </ul>
+      <h3 style="margin-top:4mm">Next</h3>
+      <p class="small">4K or 8K masters from the same code; vertical and square cuts, which need re-layout rather than cropping; and a 3D pass with glowing accents, grit and matte work, already requested.</p>
+    </div>
+  </div>
+  <div class="folio">20</div>
+</section>
+
+</body>
+</html>

@@ -26,10 +26,10 @@ function images() {
   jpg(path.join(OUT, 'sheet1.png'), 'sheet-first.jpg', 'scale=1600:-1');
   jpg(path.join(OUT, 'sheet1.png'), 'pb-pink.jpg', 'crop=480:270:486:1104,scale=960:-1');
   jpg(frame(12.4), 'pa-pink.jpg', 'scale=960:-1');
-  jpg(path.join(OUT, 'before-outline.png'), 'pb-outline.jpg', 'crop=960:540:0:0');
-  jpg(frame(13.2), 'pa-outline.jpg', 'crop=960:540:0:0');
-  jpg(path.join(OUT, 'blur8.png'), 'pb-blur.jpg', 'crop=960:540:600:250');
-  jpg(frame(23.1), 'pa-blur.jpg', 'crop=960:540:600:250');
+  jpg(path.join(OUT, 'before-outline.png'), 'pb-outline.jpg', 'crop=560:315:360:230,scale=960:-1');
+  jpg(frame(13.2), 'pa-outline.jpg', 'crop=560:315:360:230,scale=960:-1');
+  jpg(path.join(OUT, 'blur8.png'), 'pb-blur.jpg', 'crop=560:315:700:360,scale=960:-1');
+  jpg(frame(23.1), 'pa-blur.jpg', 'crop=560:315:700:360,scale=960:-1');
   jpg(path.join(OUT, 'before-ending.png'), 'pb-end.jpg', 'scale=960:-1');
   jpg(frame(29.62), 'pa-end.jpg', 'scale=960:-1');
   jpg(path.join(OUT, 'ui-desk.png'), 'ui-desk.jpg', 'scale=1200:-1');
@@ -46,23 +46,23 @@ function images() {
 
 function energySvg() {
   const pts = JSON.parse(fs.readFileSync(path.join(OUT, 'loudness.json'), 'utf8'));
-  const x0 = 46, x1 = 630, y0 = 30, y1 = 262, lo = -60, hi = -5;
+  const x0 = 46, x1 = 630, y0 = 34, y1 = 262, lo = -60, hi = -5;
   const X = t => x0 + (t / 30) * (x1 - x0), Y = v => y1 - ((Math.max(lo, v) - lo) / (hi - lo)) * (y1 - y0);
   let s = `<svg viewBox="0 0 640 290" style="width:100%; height:auto; display:block" font-family="Martian Mono, monospace">`;
   SCENES.slice(0, -1).forEach(([t, name], i) => {
     const e = SCENES[i + 1][0];
     s += `<rect x="${X(t)}" y="${y0}" width="${X(e) - X(t)}" height="${y1 - y0}" fill="${C.ink}" fill-opacity="${i % 2 ? 0.07 : 0.03}"/>`;
-    s += `<text x="${X(t) + 3}" y="${y0 - 6}" font-size="8" fill="${C.muted}">${name}</text>`;
+    s += `<text x="${X(t) + 3}" y="${y0 - (i % 2 ? 5 : 16)}" font-size="8" fill="${C.muted}">${name}</text>`;
   });
   for (const v of [-50, -40, -30, -20, -10]) {
     s += `<line x1="${x0}" x2="${x1}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.ink}" stroke-opacity=".1" stroke-width="1"/>`;
     s += `<text x="${x0 - 6}" y="${Y(v) + 3}" font-size="8" fill="${C.muted}" text-anchor="end">${String(v).replace('-', '−')}</text>`;
   }
   for (let t = 0; t <= 30; t += 5) s += `<text x="${X(t)}" y="${y1 + 14}" font-size="8" fill="${C.muted}" text-anchor="middle">${t} s</text>`;
-  s += `<text x="${x0 - 6}" y="${y0 - 6}" font-size="8" fill="${C.muted}" text-anchor="end">LUFS</text>`;
+  s += `<text x="${x0 - 6}" y="${y0 + 6}" font-size="8" fill="${C.muted}" text-anchor="end">LUFS</text>`;
   s += `<polyline fill="none" stroke="${C.ultra}" stroke-width="2" stroke-linejoin="round" points="${pts.map(([t, v]) => `${X(t).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')}"/>`;
   const at = t => pts.reduce((a, b) => (Math.abs(b[0] - t) < Math.abs(a[0] - t) ? b : a));
-  for (const [t, label, dy] of [[12.1, 'slam', -10], [16.9, 'silence', -10], [20.1, 'slash', -10], [25.0, 'the fill again', -12]]) {
+  for (const [t, label, dy] of [[12.1, 'slam', -10], [16.4, 'drop-out', 15], [20.1, 'slash', -10]]) {
     const [pt, v] = at(t);
     s += `<circle cx="${X(pt)}" cy="${Y(v)}" r="4" fill="${C.ultra}" stroke="#F6F4EF" stroke-width="2"/>`;
     s += `<text x="${X(pt)}" y="${Y(v) + dy}" font-size="8.5" fill="${C.ink}" text-anchor="middle">${label}</text>`;
@@ -83,12 +83,17 @@ function gridSvg(CUE) {
     s += `<line x1="${X(b / 2)}" x2="${X(b / 2)}" y1="52" y2="${bar ? 70 : 62}" stroke="${C.ink}" stroke-opacity="${bar ? 0.6 : 0.25}" stroke-width="1"/>`;
     if (bar && b < 60) s += `<text x="${X(b / 2) + 3}" y="69" font-size="7" fill="${C.muted}">${b / 4 + 1}</text>`;
   }
-  const hits = [CUE.dotPop, ...CUE.bounces, CUE.split1, CUE.split2, CUE.burst, CUE.weLock, ...CUE.make, ...CUE.dotInA, CUE.hop, CUE.hopLand,
-    CUE.motion, ...CUE.letterLand, CUE.slam, CUE.build, CUE.collapse, CUE.ping, ...CUE.tittle, CUE.code, ...CUE.locks, CUE.slash, CUE.fall,
-    CUE.straighten, ...CUE.final, ...CUE.finalBounces, CUE.reflow, CUE.asterisk, CUE.fadeOut, CUE.blink];
+  const hits = cueHits(CUE);
   for (const h of hits) s += `<circle cx="${X(h)}" cy="86" r="3" fill="${C.flamingo}"/>`;
-  s += `<text x="${x0}" y="110" font-size="7.5" fill="${C.muted}">BARS 1–15 · ${hits.length} MAJOR CUES · EVERY ONE ON THE 1/16 GRID (0.125 s)</text>`;
+  const on = hits.filter(h => Math.abs(h * 8 - Math.round(h * 8)) < 1e-6).length;
+  s += `<text x="${x0}" y="110" font-size="7.5" fill="${C.muted}">BARS 1–15 · ${hits.length} MAJOR CUES · ${on} ON THE 1/16 GRID (0.125 s) · BOUNCE FILLS SUBDIVIDE TO 1/64</text>`;
   return s + '</svg>';
+}
+
+function cueHits(CUE) {
+  return [CUE.dotPop, ...CUE.bounces, CUE.split1, CUE.split2, CUE.burst, CUE.weLock, ...CUE.make, ...CUE.dotInA, CUE.hop, CUE.hopLand,
+    CUE.motion, ...CUE.letterLand, CUE.slam, CUE.build, CUE.collapse, CUE.ping, ...CUE.tittle, CUE.portal, CUE.code, ...CUE.locks, CUE.slash, CUE.fall,
+    CUE.straighten, ...CUE.final, ...CUE.finalBounces, CUE.reflow, CUE.asterisk, CUE.fadeOut, CUE.blink];
 }
 
 function spectroLabels() {
@@ -103,7 +108,7 @@ function spectroLabels() {
   const index = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const lines = index.split('\n').length;
   const log = fs.readFileSync(path.join(OUT, 'render.log'), 'utf8');
-  const secs = +((log.match(/in (\d+) s/) || [])[1] || 0);
+  const secs = +((log.match(/1800\/1800 frames · (\d+) s/) || [])[1] || 0);
   const mp4 = fs.statSync(path.join(ROOT, 'we-make-motion.mp4')).size / 1e6;
 
   // stats straight from the film: particle count and number of scheduled sound sources
@@ -122,7 +127,16 @@ function spectroLabels() {
   });
   const CUE = eval('(' + fs.readFileSync(path.join(ROOT, 'src/core.js'), 'utf8').match(/const CUE = (\{[\s\S]*?\n\});/)[1] + ')');
 
+  const r128 = (() => {
+    const r = require('child_process').spawnSync(FFMPEG, ['-hide_banner', '-nostats', '-i', path.join(OUT, 'soundtrack.wav'), '-af', 'ebur128=peak=true', '-f', 'null', '-'], { encoding: 'utf8' });
+    const sum = r.stderr.slice(r.stderr.lastIndexOf('Summary'));
+    const g = re => (sum.match(re) || [])[1];
+    return { I: g(/I:\s+(-?[\d.]+) LUFS/), LRA: g(/LRA:\s+([\d.]+) LU/), P: g(/Peak:\s+(-?[\d.]+) dBFS/) };
+  })();
+  const hits = cueHits(CUE), onGrid = hits.filter(h => Math.abs(h * 8 - Math.round(h * 8)) < 1e-6).length;
+  const minus = v => String(v).replace('-', '−');
   const tokens = {
+    LUFS: minus(r128.I), PEAK: minus(r128.P), LRA: r128.LRA, CUES: String(hits.length), ONGRID: String(onGrid),
     FRAMES: '1,800', SUBFRAMES: '43,200', LINES: fmt(lines), MP4MB: mp4.toFixed(1), RENDERMIN: (secs / 60).toFixed(0),
     PARTICLES: fmt(stats.particles), VOICES: fmt(stats.voices),
     ENERGY_SVG: energySvg(), GRID_SVG: gridSvg(CUE), SPECTRO_LABELS: spectroLabels(),

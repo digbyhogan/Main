@@ -63,9 +63,9 @@ const save = (file, dataUrl) => fs.writeFileSync(file, Buffer.from(dataUrl.split
   }
 
   // --range a,b re-renders only frames [a, b) into the existing frame folder, then re-muxes.
-  const range = arg('range', null);
+  const range = arg('range', null), audioOnly = process.argv.includes('--audio-only');
   const frames = path.join(OUT, 'frames');
-  if (!range) { fs.rmSync(frames, { recursive: true, force: true }); }
+  if (!range && !audioOnly) fs.rmSync(frames, { recursive: true, force: true });
   fs.mkdirSync(frames, { recursive: true });
   const total = Math.round(30 * FPS);
   const [fa, fb] = range ? range.split(',').map(Number) : [0, total];
@@ -81,7 +81,7 @@ const save = (file, dataUrl) => fs.writeFileSync(file, Buffer.from(dataUrl.split
   const wav = path.join(OUT, 'soundtrack.wav');
   fs.writeFileSync(wav, Buffer.from(wavB64, 'base64'));
   console.log(`soundtrack → ${wav}`);
-  if (process.argv.includes('--audio-only')) { await browser.close(); return; }
+  if (audioOnly) { await browser.close(); return; }
 
   // picture, split across workers
   const pages = [page0];

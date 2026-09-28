@@ -56,6 +56,12 @@
   .num { font-variant-numeric: tabular-nums; }
   .tag { display: inline-block; font: 700 6pt/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 1.1mm 1.6mm; border-radius: 1mm; background: rgba(17,17,22,.08); margin: 0 1mm 1mm 0; }
   .dark .tag { background: rgba(241,239,233,.12); }
+  .strips { display: grid; gap: 1.6mm; }
+  .strips img { display: block; width: 100%; aspect-ratio: 2.75; object-fit: cover; border-radius: 1mm; }
+  .strips.tall img { aspect-ratio: 2.5; }
+  .ba { display: grid; grid-template-columns: 58mm 58mm 1fr; gap: 3mm 5mm; align-items: start; padding: 2.2mm 0; border-top: 1px solid var(--rule); }
+  .ba img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 1mm; }
+  .ba .lbl { font: 700 5.8pt/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 1.2mm; }
   .dot { display: inline-block; width: .62em; height: .62em; border-radius: 50%; background: var(--flamingo); vertical-align: baseline; }
 </style>
 </head>
@@ -105,7 +111,7 @@
         <tr><td>Particles forming “WE”</td><td class="m">{{PARTICLES}}</td></tr>
         <tr><td>Sound sources scheduled</td><td class="m">{{VOICES}} oscillators + noise</td></tr>
         <tr><td>Samples or recordings used</td><td class="m">0</td></tr>
-        <tr><td>Loudness · true peak</td><td class="m">−15.9 LUFS · −0.8 dBFS</td></tr>
+        <tr><td>Loudness · peak</td><td class="m">{{LUFS}} LUFS · {{PEAK}} dBFS</td></tr>
         <tr><td>Colours · typefaces · protagonists</td><td class="m">5 · 3 · 1 dot</td></tr>
         <tr><td>Lines in the film’s page</td><td class="m">{{LINES}}</td></tr>
         <tr><td>Render time (4 CPU cores)</td><td class="m">{{RENDERMIN}} min</td></tr>

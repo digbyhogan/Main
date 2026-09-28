@@ -12,7 +12,7 @@
       <p>Every significant moment lives once, in a single object called <code>CUE</code>. The picture reads it to decide when a letter lands, and the score reads the same values to decide when a kick fires. If I move the slam from 12.0 s to 12.25 s, the camera punch, the flash, the scale spring, the kick, the snare, the clap and the crash all move together. Sync cannot drift because there is nothing to drift apart.</p>
       <p>The same idea drives the camera: a list of <code>[time, strength]</code> impacts feeds a decaying shake and a zoom punch, so the frame physically reacts to the loudest hits.</p>
       <h3 style="margin-top:4mm">Why a grid</h3>
-      <p>120 BPM gives a beat of exactly 0.5 s, an eighth of 0.25 s and a sixteenth of 0.125 s. At 60 fps those are 30, 15 and 7.5 frames. Every entrance, lock and cut was placed on that grid, which is why the piece feels musical even when nothing is on screen but a dot.</p>
+      <p>120 BPM gives a beat of exactly 0.5 s, an eighth of 0.25 s and a sixteenth of 0.125 s. At 60 fps those are 30, 15 and 7.5 frames. {{ONGRID}} of the {{CUES}} major cues sit exactly on it. The exceptions are deliberate: the opening pop (0.15 s) and the dive into the o (17.35 s) are timed by feel, and the bounce fills subdivide to 1/32 and 1/64 notes, as real drum fills do. That is why the piece feels musical even when nothing is on screen but a dot.</p>
     </div>
     <div>
       <pre><span class="c">// src/core.js · the single source of truth</span>
@@ -87,7 +87,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
   <div class="cols c2">
     <div>
       <h3><span class="dot"></span>&nbsp; 0:00–0:02 · The drop</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2mm"><figure><img src="img/s-0.90.jpg"></figure><figure><img src="img/s-1.00.jpg"></figure></div>
+      <div class="strips"><img src="img/s-0.90.jpg"><img src="img/s-1.00.jpg"></div>
       <p class="cap">0.90 s falling, stretched along its velocity · 1.00 s impact: squash, ripple, ground line</p>
       <p class="small" style="margin-top:3mm"><b>Picture.</b> A dot pops in on a back ease (0.15 s), crouches (anticipation, 0.30–0.45 s), hops, and falls under gravity to land exactly on beat 3. Each landing throws an elliptical ripple across an implied floor, and the first draws a hairline horizon that fades out.</p>
       <p class="small"><b>Sound.</b> A G6 blip for the pop, a rising sine for the jump, then five kicks with clacks on the landings: 1.0, 1.5, 1.75, 1.875, 1.9375 s. The ball plays its own fill into the downbeat of bar 2.</p>
@@ -95,7 +95,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
     </div>
     <div>
       <h3><span class="dot"></span>&nbsp; 0:02–0:06 · WE</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2mm"><figure><img src="img/s-2.60.jpg"></figure><figure><img src="img/s-3.40.jpg"></figure></div>
+      <div class="strips"><img src="img/s-2.60.jpg"><img src="img/s-3.40.jpg"></div>
       <p class="cap">2.60 s mitosis, four cells · 3.40 s swarm curving home, left to right</p>
       <p class="small" style="margin-top:3mm"><b>Picture.</b> The dot divides on the beat, 1 → 2 → 4, necks pinching like cells. At 2.75 s it bursts into {{PARTICLES}} particles. Their targets were sampled from the word WE rasterised offscreen. Each particle flies out on a swirling elliptical orbit, then homes in along an arc, launched in a left-to-right stagger so the word appears to write itself. At 4.0 s the dots flash into solid type with a flamingo outline echo, then the camera pushes in slowly. The letters crouch and leave upward while a liquid chalk wipe rises.</p>
       <p class="small"><b>Sound.</b> C5 and G5 plucks on the splits, a burst, 26 scattered pentatonic blips (one per cluster of particles), a riser, then kick, snare, clap and crash on the lock. The groove starts here.</p>
@@ -111,7 +111,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
   <div class="cols c2">
     <div>
       <h3><span class="dot"></span>&nbsp; 0:06–0:10 · MAKE</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2mm"><figure><img src="img/s-7.30.jpg"></figure><figure><img src="img/s-9.85.jpg"></figure></div>
+      <div class="strips"><img src="img/s-7.30.jpg"><img src="img/s-9.85.jpg"></div>
       <p class="cap">7.30 s the dot wedged in the A’s counter · 9.85 s ultramarine iris opening from the dot</p>
       <p class="small" style="margin-top:3mm"><b>Picture.</b> A blueprint grid draws out from the centre, labelled like a type specimen (CAP 360, MID 540, BASE 720, STROKE 76). Then M, A, K and E are drawn one per beat as continuous pen strokes. The dot drops into the A where the crossbar should be. Its resting height was solved so it wedges exactly between the A’s inner edges. At 8.5 s it crouches and hops over the K, clearing it by about a pixel, onto the tip of E’s middle bar. That bar then shoots out to become the horizon while everything else retracts, and an ultramarine iris opens from the dot.</p>
       <p class="small"><b>Sound.</b> Ticking hats as the grid draws, woodblock clacks tuned upward per glyph, a two-part clink for the dot, a sine hop and boop, a zip for the line and a riser into the cut.</p>
@@ -119,7 +119,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
     </div>
     <div>
       <h3><span class="dot"></span>&nbsp; 0:10–0:16 · MOTION</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2mm"><figure><img src="img/s-11.00.jpg"></figure><figure><img src="img/s-15.40.jpg"></figure></div>
+      <div class="strips"><img src="img/s-11.00.jpg"><img src="img/s-15.40.jpg"></div>
       <p class="cap">11.00 s letters riding the wave with echoes · 15.40 s the build: tilt, zoom, shear, flash</p>
       <p class="small" style="margin-top:3mm"><b>Picture.</b> The horizon comes alive as a travelling sine wave; the dot surfs it leftward and hops out. The letters of MOTION follow, sitting on the wave and rotating to its tangent. They land on consecutive sixteenths, then the wave flattens and they settle one after another. At 12.0 s: the slam. Six marquee rows open like blinds and scroll in alternating directions, with speed spiking on every kick. From 14.0 s the speed doubles every half-second while the camera tilts and pushes in and the rows shear with their own velocity. At 15.75 s everything decelerates like tape and collapses to a single line.</p>
       <p class="small"><b>Sound.</b> Impact and crash, full groove, a C–D–E–G–A–C arpeggio as the letters land, the slam, a snare roll from 8ths to 16ths to 32nds under a riser, and a tape-stop pitch dive into silence.</p>
@@ -135,7 +135,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
   <div class="cols c2">
     <div>
       <h3><span class="dot"></span>&nbsp; 0:16–0:18 · without</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2mm"><figure><img src="img/s-17.20.jpg"></figure><figure><img src="img/s-17.80.jpg"></figure></div>
+      <div class="strips"><img src="img/s-17.20.jpg"><img src="img/s-17.80.jpg"></div>
       <p class="cap">17.20 s the dot is the tittle of the i · 17.80 s diving into the ink of the o</p>
       <p class="small" style="margin-top:3mm"><b>Picture.</b> A hard cut to chalk and stillness. The line from MOTION switches off like an old television. “without” resolves letter by letter from blur, with its tracking tightening. The <span class="it">i</span>’s own tittle is masked out and the dot drops in to take its place. To find the tittle, the renderer rasterises the glyph and flood-fills its top-most blob. Then the camera dives into the <span class="it">o</span>. The zoom target is the deepest point inside the glyph’s ink, found with a distance transform, so the stroke fills the screen and becomes the next scene’s ground.</p>
       <p class="small"><b>Sound.</b> The drums drop out completely. There is one glass ping (E6 with inharmonic partials), some air, a tiny tick as the dot lands, and a riser into the cut. Two seconds of near-silence make the next hit feel twice as loud.</p>
@@ -143,7 +143,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
     </div>
     <div>
       <h3><span class="dot"></span>&nbsp; 0:18–0:22 · CODE</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2mm"><figure><img src="img/s-19.60.jpg"></figure><figure><img src="img/s-20.60.jpg"></figure></div>
+      <div class="strips"><img src="img/s-19.60.jpg"><img src="img/s-20.60.jpg"></div>
       <p class="cap">19.60 s decoding, selection highlight · 20.60 s struck through and falling</p>
       <p class="small" style="margin-top:3mm"><b>Picture.</b> The backdrop is a syntax-highlighted editor showing excerpts of the film’s own source, including <code>g.fillText('without', CX, CY); // allegedly</code>. The brackets spring in, the letters scramble and lock on consecutive eighths, each flashing a butter selection highlight, and a caret blinks on the beat. At 20.0 s a flamingo bar slashes through. Every glyph, and then every line of code, falls with its own spin. The bar hangs in mid-air for a beat, in the cartoon tradition, before straightening and exploding into a two-layer wipe.</p>
       <p class="small"><b>Sound.</b> Boom and glitch burst, bit-crushed hats, square-wave chatter that thins as letters lock, four rising locks, a slash, seven falling bloops and two whooshes for the wipe.</p>
@@ -159,7 +159,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
   <div class="cols c2">
     <div>
       <h3><span class="dot"></span>&nbsp; 0:22–0:26 · The claim</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2mm"><figure><img src="img/s-23.10.jpg"></figure><figure><img src="img/s-25.80.jpg"></figure></div>
+      <div class="strips tall"><img src="img/s-23.10.jpg"><img src="img/s-25.80.jpg"></div>
       <p class="cap">23.10 s MOTION slams in, stretched and sheared by its own speed · 25.80 s the lockup</p>
       <p class="small" style="margin-top:3mm"><b>Picture.</b> A Swiss-style stacked lockup, and each word gets its own verb on its own beat. WE and MAKE rise through masks, letter by letter. MOTION slides in from off-screen, stretched and sheared in proportion to its speed. <span class="it">without</span> whispers in from blur. CODE decodes. Then the dot drops from the top of frame and bounces into place as the full stop, with the same physics and timings as the opening.</p>
       <p class="small"><b>Sound.</b> Five hits: two snares with clacks, a crash and impact for MOTION, the glass ping again for <span class="it">without</span>, a glitch for CODE. Then the opening drum fill plays again, note for note, as the dot bounces.</p>
@@ -167,7 +167,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
     </div>
     <div>
       <h3><span class="dot"></span>&nbsp; 0:26–0:30 · The fine print</h3>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:2mm"><figure><img src="img/s-26.40.jpg"></figure><figure><img src="img/s-28.80.jpg"></figure></div>
+      <div class="strips tall"><img src="img/s-26.40.jpg"><img src="img/s-28.80.jpg"></div>
       <p class="cap">26.40 s FLIP reflow under a falling ink curtain · 28.80 s the asterisk and its footnote</p>
       <p class="small" style="margin-top:3mm"><b>Picture.</b> Every word travels from its lockup position and size to its place in a single-line sentence, on alternating arcs with a small back-ease pull, while a liquid ink curtain falls. At 27.25 s the full stop rises to superscript and grows six arms: it is now an asterisk. The footnote types itself at 48 characters a second: <span class="it">“*Except this one. This one is {{LINES}} lines of code.”</span> Then everything fades, and the asterisk drifts to centre, retracts its arms, turns back into the opening dot and blinks out.</p>
       <p class="small"><b>Sound.</b> A reflow whoosh, a sproing (a frequency-modulated sine) for the asterisk, one tick per typed character, a soft final kick with a low glass tone, and the opening blip to close.</p>
@@ -229,7 +229,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
   <div class="cols c3" style="margin-top:6mm; flex:0">
     <p class="small" style="color:rgba(241,239,233,.8)"><b>Visible as designed:</b> the accelerating bounce fill at 1–2 s; the arpeggio staircase around 10.8–11.4 s; the snare roll thickening into the tape-stop dive at 15.75 s.</p>
     <p class="small" style="color:rgba(241,239,233,.8)">The near-empty band at 16–18 s is the silence, with the glass ping ringing through it as a horizontal line. The falling bloops at 20.25 s show as descending diagonals.</p>
-    <p class="small" style="color:rgba(241,239,233,.8)"><b>Loudness:</b> first pass −17.0 LUFS integrated, peak −1.0 dBFS. After adding bus drive: −15.9 LUFS, peak −0.8 dBFS, loudness range 3.9 LU.</p>
+    <p class="small" style="color:rgba(241,239,233,.8)"><b>Loudness:</b> first pass −17.0 LUFS, a little shy, so I added bus drive (−15.9). Charting the energy curve for this document then showed the “silence” peaking at −9.8 LUFS, because the glass ping sits where hearing is most sensitive. The pings came down 7–10 dB. Final: {{LUFS}} LUFS integrated, {{PEAK}} dBFS peak, {{LRA}} LU range.</p>
   </div>
   <div class="folio">13</div>
 </section>
@@ -259,7 +259,7 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
         <tr><td>Frames · sub-frames</td><td class="m">{{FRAMES}} · {{SUBFRAMES}}</td></tr>
         <tr><td>Shutter</td><td class="m">180° (1/120 s), 24 samples</td></tr>
         <tr><td>Workers</td><td class="m">3 headless Chromium pages, 4 cores</td></tr>
-        <tr><td>Render wall-clock</td><td class="m">{{RENDERMIN}} min</td></tr>
+        <tr><td>Render wall-clock (frames)</td><td class="m">{{RENDERMIN}} min</td></tr>
         <tr><td>Video</td><td class="m">H.264 High, CRF 18, yuv420p, grain-tuned</td></tr>
         <tr><td>Audio</td><td class="m">48 kHz WAV → AAC 256 kb/s</td></tr>
         <tr><td>Master size</td><td class="m">{{MP4MB}} MB</td></tr>

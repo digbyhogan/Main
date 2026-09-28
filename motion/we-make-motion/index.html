@@ -1564,7 +1564,7 @@ function score(M) {
   tick(M, 16.0, { gain: 0.12, freq: 900 });
   sweep(M, 16.0, 0.3, { f0: 90, f1: 40, gain: 0.18, rev: 0 });
   air(M, 16.25, 1.1);
-  glass(M, CUE.ping, { freq: NOTE.E6 });
+  glass(M, CUE.ping, { freq: NOTE.E6, gain: 0.07 });
   CUE.tittle.forEach((x, i) => clack(M, x, { freq: 1800, gain: [0.14, 0.06, 0.03][i] }));
   riser(M, CUE.portal, 0.65, { gain: 0.3, f0: 200 });
   whoosh(M, 17.6, 0.4, { f0: 300, f1: 6000, gain: 0.2, pan0: 0, pan1: 0 });
@@ -1598,7 +1598,7 @@ function score(M) {
   [22.0, 22.5].forEach((x, i) => { snare(M, x, { gain: 0.45 }); clack(M, x, { freq: 700 + i * 140, gain: 0.25 }); });
   whoosh(M, 22.9, 0.5, { f0: 800, f1: 3000, gain: 0.26, pan0: 0.8, pan1: -0.3 });
   crash(M, 23.0, { gain: 0.35 }); impact(M, 23.0, { gain: 0.55 });
-  glass(M, 23.5, { freq: NOTE.E6, gain: 0.18 });
+  glass(M, 23.5, { freq: NOTE.E6, gain: 0.08 });
   snare(M, 24.0, { gain: 0.45 }); glitchBurst(M, 24.0, 0.1, { gain: 0.12, seed: 17 });
   [NOTE.E5, NOTE.G5, NOTE.A5, NOTE.C6].forEach((f, i) => blip(M, 24.0 + i * 0.0625, { freq: f * 2, gain: 0.1, type: 'square', dur: 0.05 }));
   bounceKit(FB, 0.95);
@@ -1617,7 +1617,7 @@ function score(M) {
     tick(M, CUE.typeStart + i / 48, { gain: 0.045 + 0.03 * rnd(i, 3), freq: 2600 + 1400 * rnd(i, 4), pan: (i / FN.note.length - 0.5) * 0.8 });
   }
   kick(M, CUE.fadeOut, { gain: 0.55, decay: 0.8 });
-  glass(M, CUE.fadeOut, { freq: NOTE.E5, gain: 0.2 });
+  glass(M, CUE.fadeOut, { freq: NOTE.E5, gain: 0.11 });
   sweep(M, CUE.fadeOut + 0.45, 0.2, { f0: 1400, f1: 500, gain: 0.07 });
   blip(M, CUE.blink, { freq: NOTE.G6, gain: 0.2, rev: 0.5 });
 

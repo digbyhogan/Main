@@ -20,8 +20,9 @@
       <tr><td class="m">08 Sound check</td><td>Measured loudness (−17.0 LUFS, a bit shy) and added bus drive (−15.9 LUFS). Verified every cue against a spectrogram.</td></tr>
       <tr><td class="m">09 Blur test</td><td>An 8-sample blur stepped visibly on the fastest move (MOTION entering at about 17,000 px/s). Rebuilt the accumulator in float at 24 samples.</td></tr>
       <tr><td class="m">10 UI pass</td><td>Screenshotted the player at desktop and phone widths. Fixed a hidden-element rule, ambiguous timecodes, colliding scrubber labels and an oversized play button on phones. The player now idles instead of redrawing when paused.</td></tr>
-      <tr><td class="m">11 Master</td><td>Published the player. Rendered {{FRAMES}} frames with 24-sample blur in {{RENDERMIN}} minutes and muxed the master. Re-shot the last 2.5 s so the footnote quotes the final line count.</td></tr>
-      <tr><td class="m">12 This document</td><td>Laid out in HTML in the film’s own typefaces and printed to PDF with the same headless browser.</td></tr>
+      <tr><td class="m">11 Master</td><td>Published the player. Rendered {{FRAMES}} frames with 24-sample blur and muxed the master. Re-shot the last 2.5 s so the footnote quotes the final line count. The first encode was 353 MB because film grain is incompressible noise. Lighter grain at CRF 18 brought it to about 16 MB with no visible loss.</td></tr>
+      <tr><td class="m">12 Mix fix</td><td>Charting loudness for this document showed the “silence” at 16 s peaking at −9.8 LUFS because of the glass ping. Lowered the pings 7–10 dB. A renderer bug wiped the frame cache during the audio-only pass, so the master was re-rendered in full. The frames are deterministic, so they came back identical.</td></tr>
+      <tr><td class="m">13 This document</td><td>Laid out in HTML in the film’s own typefaces, printed to PDF with the same headless browser, then proofed page by page.</td></tr>
     </table>
   </div>
   <div class="folio">15</div>
@@ -49,18 +50,15 @@
 <!-- 17 · PROGRESSION: BEFORE / AFTER -->
 <section class="page">
   <div class="run"><span>We Make Motion* — Process</span><span>Progression to final · 3</span></div>
-  <h2 style="font-size:17pt; margin-bottom:4mm">Before and after</h2>
-  <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:3mm 4mm; flex:1">
-    <figure><img src="img/pb-pink.jpg"><p class="cap">Before · 12.4 s rows inherit flamingo</p></figure>
-    <figure><img src="img/pa-pink.jpg"><p class="cap">After · chalk rows, flamingo only on the dots</p></figure>
-    <figure><img src="img/pb-outline.jpg"><p class="cap">Before · outline shows overlapping contours in M and N</p></figure>
-    <figure><img src="img/pa-outline.jpg"><p class="cap">After · fat stroke knocked out by a ground-colour fill</p></figure>
-    <figure><img src="img/pb-blur.jpg"><p class="cap">Before · 8 samples: visible copies at ~17,000 px/s</p></figure>
-    <figure><img src="img/pa-blur.jpg"><p class="cap">After · 24 samples, float accumulation: a continuous smear</p></figure>
-    <figure><img src="img/pb-end.jpg"><p class="cap">Before · 29.62 s asterisk stranded at the sentence’s end</p></figure>
-    <figure><img src="img/pa-end.jpg"><p class="cap">After · it returns to centre as the opening dot</p></figure>
-  </div>
-  <p class="small" style="margin-top:3mm; max-width:none">Each fix was checked on a re-rendered still before the master was rendered. The outline problem is specific to variable fonts, which build glyphs from overlapping shapes. It is invisible when filled and obvious when stroked. Stroking at double width, then filling with the ground colour, hides the inner half of every stroke including the overlaps.</p>
+  <h2 style="font-size:17pt; margin-bottom:3mm">Before and after</h2>
+  <div class="ba"><figure><img src="img/pb-pink.jpg"><div class="lbl">Before · 12.4 s</div></figure><figure><img src="img/pa-pink.jpg"><div class="lbl">After · 12.4 s</div></figure>
+    <p class="small" style="margin:0"><b>Leaking fill colour.</b> The helper that draws each flamingo separator dot changed the fill colour and never changed it back, so every word after the first dot turned pink. Now each word sets its own fill. The before frame is a thumbnail from the first contact sheet.</p></div>
+  <div class="ba"><figure><img src="img/pb-outline.jpg"><div class="lbl">Before · 13.2 s</div></figure><figure><img src="img/pa-outline.jpg"><div class="lbl">After · 13.2 s</div></figure>
+    <p class="small" style="margin:0"><b>Overlapping contours.</b> Variable fonts build letters from overlapping shapes. Filled, that’s invisible; stroked, the overlaps show as stray lines inside M, N and T. The fix strokes at double width, then fills with the ground colour so only the outer half of each stroke survives.</p></div>
+  <div class="ba"><figure><img src="img/pb-blur.jpg"><div class="lbl">Before · 8 samples</div></figure><figure><img src="img/pa-blur.jpg"><div class="lbl">After · 24 samples</div></figure>
+    <p class="small" style="margin:0"><b>Stepped motion blur.</b> MOTION enters at roughly 17,000 px/s, about 140 px of travel inside one shutter. Eight samples left visible copies. Twenty-four samples, summed in 32-bit float so the average doesn’t band, give a continuous smear.</p></div>
+  <div class="ba"><figure><img src="img/pb-end.jpg"><div class="lbl">Before · 29.62 s</div></figure><figure><img src="img/pa-end.jpg"><div class="lbl">After · 29.62 s</div></figure>
+    <p class="small" style="margin:0"><b>The bookend.</b> The asterisk used to blink out where the sentence ended, off to the right. The film opens on a centred dot, so now the asterisk drifts home, shrinks back to the opening dot’s size, and blinks out with the same blip it started with.</p></div>
   <div class="folio">17</div>
 </section>
 
@@ -125,7 +123,7 @@ node render/render.cjs --range 1650,1800
 <span class="c"># this document</span>
 node docs/process/build-pdf.cjs</pre>
       <h3 style="margin-top:4mm">Credits</h3>
-      <p class="small">Unbounded (NL Studio), Bodoni Moda (Owen Earl), Martian Mono (Evil Martians). All SIL Open Font License. Everything else, including every sound, was generated.</p>
+      <p class="small">Typefaces: Unbounded, Bodoni Moda and Martian Mono, all from Google Fonts under the SIL Open Font License. Everything else, including every sound, was generated.</p>
     </div>
     <div>
       <h3>Limits, honestly</h3>
