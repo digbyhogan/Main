@@ -103,8 +103,21 @@ function spectroLabels() {
   return L.map(([t, s], i) => `<div style="position:absolute; left:${(t / 30) * 100}%; top:${i % 2 ? -6.5 : -12.5}mm; height:${i % 2 ? 6.5 : 12.5}mm; border-left:1px solid rgba(241,239,233,.45); padding-left:1.2mm; font:400 5.8pt/1 var(--mono); color:rgba(241,239,233,.85); white-space:nowrap">${s}</div>`).join('');
 }
 
+const OUT3 = path.join(ROOT, '..', 'we-make-motion-3d', 'render', 'out'), IMG3 = path.join(DOC, 'img3');
+const frame3 = t => path.join(OUT3, 'frames', `f${String(Math.round(t * 60)).padStart(5, '0')}.png`);
+function images3() {
+  fs.mkdirSync(IMG3, { recursive: true });
+  for (const t of [4.4, 11.0, 13.2, 16.9, 23.2]) ff(['-i', frame3(t), '-vf', 'scale=1280:-1', '-q:v', '3', path.join(IMG3, `f-${t.toFixed(2)}.jpg`)]);
+  const times = [0.95, 1.02, 2.6, 3.3, 4.3, 5.8, 6.8, 7.6, 8.8, 9.85, 10.8, 11.4, 12.6, 14.8, 15.5, 16.9, 17.8, 19.5, 20.3, 21.9, 23.3, 25.8, 26.5, 28.8];
+  const tmp = path.join(OUT3, 'final-sheet-src'); fs.mkdirSync(tmp, { recursive: true });
+  times.forEach((t, i) => fs.copyFileSync(frame3(t), path.join(tmp, `${String(i).padStart(3, '0')}.png`)));
+  ff(['-i', path.join(tmp, '%03d.png'), '-vf', 'scale=480:-1,tile=4x6:padding=6:color=0x111116', '-frames:v', '1', path.join(OUT3, 'final-sheet-3d.png')]);
+  ff(['-i', path.join(OUT3, 'final-sheet-3d.png'), '-vf', 'scale=1944:-1', '-q:v', '3', path.join(IMG3, 'final-sheet-3d.jpg')]);
+}
+
 (async () => {
   images();
+  images3();
   const index = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
   const lines = index.split('\n').length;
   const log = fs.readFileSync(path.join(OUT, 'render.log'), 'utf8');
@@ -135,13 +148,17 @@ function spectroLabels() {
   })();
   const hits = cueHits(CUE), onGrid = hits.filter(h => Math.abs(h * 8 - Math.round(h * 8)) < 1e-6).length;
   const minus = v => String(v).replace('-', '−');
+  const log3 = fs.existsSync(path.join(OUT3, 'render3.log')) ? fs.readFileSync(path.join(OUT3, 'render3.log'), 'utf8') : '';
+  const secs3 = +((log3.match(/film → .* in (\d+) s/) || [])[1] || 0);
+  const mp43d = path.join(ROOT, '..', 'we-make-motion-3d', 'we-make-motion-3d.mp4');
   const tokens = {
+    SUB3: '5,400', RENDER3MIN: (secs3 / 60).toFixed(0), MP43DMB: fs.existsSync(mp43d) ? (fs.statSync(mp43d).size / 1e6).toFixed(1) : '?',
     LUFS: minus(r128.I), PEAK: minus(r128.P), LRA: r128.LRA, CUES: String(hits.length), ONGRID: String(onGrid),
     FRAMES: '1,800', SUBFRAMES: '43,200', LINES: fmt(lines), MP4MB: mp4.toFixed(1), RENDERMIN: (secs / 60).toFixed(0),
     PARTICLES: fmt(stats.particles), VOICES: fmt(stats.voices),
     ENERGY_SVG: energySvg(), GRID_SVG: gridSvg(CUE), SPECTRO_LABELS: spectroLabels(),
   };
-  let html = ['p1.html', 'p2.html', 'p3.html'].map(f => fs.readFileSync(path.join(DOC, f), 'utf8')).join('\n');
+  let html = ['p1.html', 'p2.html', 'p3.html', 'p4.html', 'p5.html'].map(f => fs.readFileSync(path.join(DOC, f), 'utf8')).join('\n');
   html = html.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in tokens ? tokens[k] : m));
   const left = html.match(/\{\{\w+\}\}/g);
   if (left) throw new Error('unfilled tokens: ' + left.join(', '));

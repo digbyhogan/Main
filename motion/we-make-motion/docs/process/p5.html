@@ -1,0 +1,55 @@
+<!-- 24 · APPENDIX -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Appendix</span></div>
+  <h2>Appendix</h2>
+  <div class="cols c3">
+    <div>
+      <h3>Files</h3>
+      <table class="small">
+        <tr><td class="m">we-make-motion.mp4</td><td>The master</td></tr>
+        <tr><td class="m">index.html</td><td>The film and player in one page</td></tr>
+        <tr><td class="m">src/core.js</td><td>Constants, maths, cue sheet, glyph tools</td></tr>
+        <tr><td class="m">src/scenes-1..3.js</td><td>The eight scenes, HUD, compositor, blur</td></tr>
+        <tr><td class="m">src/audio.js</td><td>Kit, score, mix, WAV encoder</td></tr>
+        <tr><td class="m">src/player.js</td><td>Transport, dope sheet, captions</td></tr>
+        <tr><td class="m">build.mjs</td><td>Stitches src into index.html</td></tr>
+        <tr><td class="m">render/render.cjs</td><td>Offline renderer and mux</td></tr>
+        <tr><td class="m">docs/process/</td><td>This document’s source</td></tr>
+        <tr><td class="m">../we-make-motion-3d/</td><td>The 3D edition: gl3, world3, scenes3, player3, render3</td></tr>
+        <tr><td class="m">we-make-motion-3d.mp4</td><td>The 3D master ({{MP43DMB}} MB)</td></tr>
+      </table>
+    </div>
+    <div>
+      <h3>Rebuild</h3>
+      <pre>node build.mjs
+pip install imageio-ffmpeg
+node render/render.cjs
+<span class="c"># preview stills</span>
+node render/render.cjs --stills 4,12.5
+<span class="c"># re-shoot a range, re-mux</span>
+node render/render.cjs --range 1650,1800
+<span class="c"># the 3D edition</span>
+node ../we-make-motion-3d/render/render3.cjs
+<span class="c"># this document</span>
+node docs/process/build-pdf.cjs</pre>
+      <h3 style="margin-top:4mm">Credits</h3>
+      <p class="small">Typefaces: Unbounded, Bodoni Moda and Martian Mono, all from Google Fonts under the SIL Open Font License. Everything else, including every sound, was generated.</p>
+    </div>
+    <div>
+      <h3>Limits, honestly</h3>
+      <ul class="list small">
+        <li><b>Listening</b> I can’t hear the mix. It was verified by measurement and spectrogram, so the balance deserves a pair of human ears.</li>
+        <li><b>Live playback</b> The browser version renders in real time, so very old phones may drop frames. The MP4 is the reference.</li>
+        <li><b>Variable fonts</b> Canvas can’t animate font axes smoothly, so weight and width changes were done with transforms instead.</li>
+        <li><b>3D</b> The 3D master uses 3 motion-blur samples, not 24, because this machine renders WebGL in software. The live 3D player needs a reasonable GPU.</li>
+      </ul>
+      <h3 style="margin-top:4mm">Next</h3>
+      <p class="small">4K or 8K masters from the same code (resolution isn’t baked in), vertical and square cuts (which need re-layout rather than cropping), and a GPU render of the 3D edition at 24 samples.</p>
+    </div>
+  </div>
+  <div class="folio">24</div>
+</section>
+
+
+</body>
+</html>

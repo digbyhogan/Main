@@ -1,0 +1,89 @@
+
+<!-- 20 · THE 3D EDITION -->
+<section class="page dark">
+  <div class="run"><span>We Make Motion* — Process</span><span>The 3D edition</span></div>
+  <div class="cols" style="grid-template-columns: 1fr 1.25fr; gap: 10mm">
+    <div>
+      <h2 style="color:var(--chalk)">Same film, <i>new medium</i></h2>
+      <p class="lede" style="color:rgba(241,239,233,.88)">The follow-up brief: a 3D version with glowing accents, grit textures, and interesting mattes and masking.</p>
+      <p class="small" style="color:rgba(241,239,233,.8)">I kept the cut, the cue sheet and the score, and swapped the renderer. The 3D edition calls the 2D film’s own choreography functions (the dot’s ballistics, the particle paths, the letters on the wave, the falling glyphs) and re-stages them in WebGL. Every hit still lands where it did, because it is the same maths.</p>
+      <p class="small" style="color:rgba(241,239,233,.8)">What changes is material. Letters are extruded from the film’s fonts and lit. Accents are emissive and bloom. Surfaces carry procedural grit. And every transition is now a matte: a shape that decides where one world ends and the next begins, with a noise-bitten, glowing seam.</p>
+      <figure style="margin-top:4mm"><img src="img3/f-13.20.jpg"><p class="cap">13.20 s: extruded MOTION in front of marquee rows placed at different depths.</p></figure>
+    </div>
+    <div>
+      <table class="small" style="color:var(--chalk)">
+        <tr><th style="color:rgba(241,239,233,.6); border-color:rgba(241,239,233,.5)">Moment</th><th style="color:rgba(241,239,233,.6); border-color:rgba(241,239,233,.5)">3D technique</th></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>The drop</b></td><td style="border-color:rgba(241,239,233,.14)">The dot is an emissive sphere carrying its own light. The gritty concrete floor only exists where it lands.</td></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>WE</b></td><td style="border-color:rgba(241,239,233,.14)">{{PARTICLES}} glowing particles scatter in depth, flatten onto the letters’ face, and the word extrudes its thickness on a spring while the camera orbits.</td></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>→ MAKE</b></td><td style="border-color:rgba(241,239,233,.14)">Liquid wipe as a noise-edged matte with a glowing seam.</td></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>MAKE</b></td><td style="border-color:rgba(241,239,233,.14)">Glossy ink capsule strokes drawn on like a pen, casting shadows on a paper wall.</td></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>→ MOTION</b></td><td style="border-color:rgba(241,239,233,.14)">Iris matte opening out of the dot.</td></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>MOTION</b></td><td style="border-color:rgba(241,239,233,.14)">Letters ride a glowing ribbon with echo trails in depth; a dolly zoom stretches the marquee world during the build.</td></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>without</b></td><td style="border-color:rgba(241,239,233,.14)">Bodoni surfacing out of fog. The o’s counter is a portal matte into CODE, and the camera flies through it.</td></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>CODE</b></td><td style="border-color:rgba(241,239,233,.14)">Three parallax layers of source; butter-glow extruded brackets; letters tumbling toward the lens.</td></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>The claim</b></td><td style="border-color:rgba(241,239,233,.14)">Words rise through clipping-plane mattes at their baselines; a spotlight sweeps the lockup across a gritty wall.</td></tr>
+        <tr><td style="border-color:rgba(241,239,233,.14)"><b>Fine print</b></td><td style="border-color:rgba(241,239,233,.14)">One world rendered in two looks, joined by a noise-edged curtain; the full stop grows six glowing arms.</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="folio">20</div>
+</section>
+
+<!-- 21 · 3D PIPELINE -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>The 3D edition · pipeline</span></div>
+  <h2>Glow, grit and mattes, in order</h2>
+  <div class="mono" style="display:grid; grid-template-columns:repeat(6, 1fr); gap:2.5mm; font-size:6.4pt; line-height:1.45; margin-bottom:6mm">
+    <div style="background:var(--ink); color:var(--chalk); padding:2.6mm; border-radius:1mm"><b>Scene A + B</b><br>HDR, 4× MSAA, shadows, fog</div>
+    <div style="background:var(--ink); color:var(--chalk); padding:2.6mm; border-radius:1mm"><b>Matte</b><br>3D mesh or 2D-drawn shape, softened</div>
+    <div style="background:var(--ultra); color:var(--chalk); padding:2.6mm; border-radius:1mm"><b>Composite</b><br>fbm noise bites the edge; seam glows</div>
+    <div style="background:var(--ultra); color:var(--chalk); padding:2.6mm; border-radius:1mm"><b>Bloom</b><br>threshold 1.35, 6-level dual Kawase</div>
+    <div style="background:var(--flamingo); color:var(--ink); padding:2.6mm; border-radius:1mm"><b>Grade</b><br>hue-safe tone curve, CA, vignette, glitch, HUD</div>
+    <div style="background:var(--flamingo); color:var(--ink); padding:2.6mm; border-radius:1mm"><b>Finish</b><br>sub-frame average, grain, dust, scratches, weave</div>
+  </div>
+  <div class="cols c3">
+    <div>
+      <h3>Mattes with teeth</h3>
+      <p class="small">A matte decides, per pixel, whether you see world A or world B. Mine come from two places: real 3D geometry rendered in white (the counter of the o, seen through the moving camera) or shapes drawn with the 2D film’s own helpers (the liquid wipe, the iris, the band). The mask is softened, then pushed around by fractal noise before it is thresholded. That gives a torn, gritty edge instead of a clean line. The same noise drives a glow along the seam, so every transition burns rather than cuts.</p>
+      <pre style="margin-top:2mm">k  = mask + (fbm(uv) − .5) · edgeNoise
+mm = smoothstep(.5 − w, .5 + w, k)
+col = mix(A, B, mm) + glow · exp(−((k − .5)/2.2w)²)</pre>
+    </div>
+    <div>
+      <h3>Glow without fog</h3>
+      <p class="small">Only emissive things should glow: the dot, the particles, the ribbon, the brackets, the blade. The bloom threshold sits at 1.35 in linear light, above anything a lit surface reaches, so chalk letters stay crisp while accents flare. Bloom is a six-level dual-Kawase pyramid: cheap, smooth and wide.</p>
+      <h3 style="margin-top:3mm">Colour you can trust</h3>
+      <p class="small">The standard filmic curve (ACES) pushes saturated blue toward purple, which is wrong for a brand ultramarine. The grade uses a luminance-only curve instead: linear to 0.8, a soft shoulder above, and a gentle roll to white only for hot emissive cores. #2D2DF5 stays #2D2DF5.</p>
+    </div>
+    <div>
+      <h3>Grit, three ways</h3>
+      <p class="small"><b>Surfaces:</b> procedural concrete and paper textures (value noise, specks, scratches) drive roughness and bump, so raking light finds texture. <b>Film:</b> luminance-weighted grain, sparse dust specks, a rare scratch and a sub-pixel gate weave, all applied after motion blur so they don’t average away. <b>Signal:</b> chromatic aberration that widens during the build, and glitch slices on the CODE hits.</p>
+      <h3 style="margin-top:3mm">Type as geometry</h3>
+      <p class="small">Glyph outlines come straight from the font files via opentype.js, are unioned with a polygon clipper, then extruded with a bevel. Faces and sides take different materials.</p>
+    </div>
+  </div>
+  <div class="folio">21</div>
+</section>
+
+<!-- 22 · 3D BEFORE / AFTER -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>The 3D edition · progression</span></div>
+  <h2 style="font-size:17pt; margin-bottom:3mm">3D, before and after</h2>
+  <div class="ba"><figure><img src="img3/b-tone.jpg"><div class="lbl">First pass · 11.0 s</div></figure><figure><img src="img3/f-11.00.jpg"><div class="lbl">Final · 11.0 s</div></figure>
+    <p class="small" style="margin:0"><b>Overcooked.</b> The first 3D render worked end to end, and looked like a nightclub in fog. The bloom threshold (1.0) caught every lit surface, and ACES turned ultramarine lavender. The fix was a 1.35 threshold, a hue-preserving tone curve and lights at roughly half power. The same pass thinned the dust, which read as stars.</p></div>
+  <div class="ba"><figure><img src="img3/b-seams.jpg"><div class="lbl">Second pass · 4.4 s</div></figure><figure><img src="img3/f-4.40.jpg"><div class="lbl">Final · 4.4 s</div></figure>
+    <p class="small" style="margin:0"><b>Seams in the letters.</b> Unbounded’s static instance still stores letters as overlapping pieces. Bevelled one by one, the pieces show their edges across the face of W and E. Unioning each glyph’s contours before extruding gives one clean outline and one clean bevel.</p></div>
+  <div class="ba"><figure><img src="img3/b-claim.jpg"><div class="lbl">Third pass · 23.2 s</div></figure><figure><img src="img3/f-23.20.jpg"><div class="lbl">Final · 23.2 s</div></figure>
+    <p class="small" style="margin:0"><b>The lockup re-lit.</b> A hard spotlight from far left blew a hotspot into the wall, and its long shadows read as a second, dark copy of the words. Moving the key frontal and wide, and the wall closer, gives tight contact shadows and an even, gritty ultramarine.</p></div>
+  <div class="ba"><figure><img src="img3/b-ring.jpg"><div class="lbl">Fourth pass · 16.9 s</div></figure><figure><img src="img3/f-16.90.jpg"><div class="lbl">Final · 16.9 s</div></figure>
+    <p class="small" style="margin:0"><b>A dot, not a ring.</b> On light grounds, a hot emissive core rolls to white and vanishes into the paper, leaving a pink ring. Light scenes now use a solid, non-HDR flamingo for the dot; dark scenes keep the glow.</p></div>
+  <div class="folio">22</div>
+</section>
+
+<!-- 23 · 3D FINAL -->
+<section class="page dark">
+  <div class="run"><span>We Make Motion* — Process</span><span>The 3D edition · final</span></div>
+  <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4mm"><h2 style="margin:0; color:var(--chalk)">The 3D cut, in 24 frames</h2><span class="mono" style="font-size:6.6pt; color:rgba(241,239,233,.6); letter-spacing:.06em">{{FRAMES}} FRAMES · {{SUB3}} SUB-FRAMES · {{RENDER3MIN}} MIN ON SOFTWARE WEBGL</span></div>
+  <figure style="flex:1; display:flex; align-items:center"><img src="img3/final-sheet-3d.jpg" style="max-height:160mm; object-fit:contain"></figure>
+  <div class="folio">23</div>
+</section>

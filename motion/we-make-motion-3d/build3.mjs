@@ -21,8 +21,7 @@ if (!window.MWC_HEADLESS) { initGL(document.querySelector('#film')); prepare3().
 let html = read(twoD, 'shell.html')
   .replace('<title>We Make Motion</title>', '<title>We Make Motion 3D</title>')
   .replace('<h1>We Make Motion<i>*</i></h1>', '<h1>We Make Motion<i>*</i> <span style="font-family:var(--mono); font-weight:700; font-size:.45em; letter-spacing:.08em; vertical-align:middle; border:1px solid var(--rule); border-radius:3px; padding:2px 6px">3D</span></h1>')
-  .replace('<p class="meta">30 s · 1920×1080 · 120 BPM · 15 bars · picture + sound from one cue sheet</p>',
-    '<p class="meta">30 s · 120 BPM · WebGL · extruded type · bloom · grit · noise-edged mattes</p>')
+  .replace(/<p class="meta">[^\n]*<\/p>/, () => '<p class="meta">30 s · 120 BPM · WebGL · extruded type · bloom · grit · noise-edged mattes · <a href="https://claude.ai/artifact/5aADa7P9M11N3eQQjSq6iX" style="color:var(--accent); text-decoration:none">2D edition ↗</a></p>')
   .replace('<script>\n/*__FILM__*/', '<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>\n<script src="https://cdnjs.cloudflare.com/ajax/libs/opentype.js/1.3.4/opentype.min.js"></script>\n<script src="https://cdn.jsdelivr.net/npm/polygon-clipping@0.15.7/dist/polygon-clipping.umd.min.js"></script>\n<script>\n/*__FILM__*/')
   .replace('/*__FILM__*/', () => film);
 html = html.replace('__LINES__', html.split('\n').length.toLocaleString('en-US'));

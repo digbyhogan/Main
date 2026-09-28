@@ -5,6 +5,8 @@ Canvas 2D for picture, Web Audio for sound. No video editor, no DAW, no samples.
 
 - **Watch:** `we-make-motion.mp4` (1920×1080, 60 fps, H.264 + AAC)
 - **Play / scrub:** open `index.html` (real-time, with a dope sheet and a "Principles" overlay)
+- **Process:** `We-Make-Motion-Process.pdf` (approach, workings, scene by scene, sound, rendering, and the progression to final)
+- **3D edition:** [`../we-make-motion-3d/`](../we-make-motion-3d/) (same cut and score, in WebGL with glow, grit and mattes)
 
 ## How it's built
 
