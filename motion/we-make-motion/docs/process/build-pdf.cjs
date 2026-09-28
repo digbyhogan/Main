@@ -101,6 +101,35 @@ function gridSvg(CUE) {
   return s + '</svg>';
 }
 
+// Every finding from the multi-agent frame review, by edition and timecode (data/qa-findings.json).
+function qaSvg() {
+  const F = JSON.parse(fs.readFileSync(path.join(DOC, 'data', 'qa-findings.json'), 'utf8'));
+  const x0 = 34, x1 = 994, X = t => x0 + (t / 30) * (x1 - x0), rows = { '2d': 30, '3d': 62 };
+  let s = `<svg viewBox="0 0 1000 104" style="width:100%; height:auto; display:block" font-family="Martian Mono, monospace">`;
+  SCENES.slice(0, -1).forEach(([t, name], i) => {
+    const e = SCENES[i + 1][0];
+    s += `<rect x="${X(t)}" y="14" width="${X(e) - X(t)}" height="64" fill="${C.ink}" fill-opacity="${i % 2 ? 0.06 : 0.025}"/>`;
+    s += `<text x="${X(t) + 3}" y="10" font-size="7" fill="${C.muted}">${name}</text>`;
+  });
+  for (const [ed, y] of Object.entries(rows)) {
+    s += `<text x="${x0 - 8}" y="${y + 3}" font-size="8" fill="${C.ink}" text-anchor="end" font-weight="700">${ed.toUpperCase()}</text>`;
+    s += `<line x1="${x0}" x2="${x1}" y1="${y}" y2="${y}" stroke="${C.ink}" stroke-opacity=".15"/>`;
+    // stack findings that share a timecode so none hide behind another
+    const seen = {};
+    for (const f of F.filter(f => f.edition === ed)) {
+      const k = f.time.toFixed(1), n = (seen[k] = (seen[k] || 0) + 1) - 1, cy = y + (n % 2 ? 1 : -1) * Math.ceil(n / 2) * 7;
+      s += f.verdict === 'confirmed'
+        ? `<circle cx="${X(f.time).toFixed(1)}" cy="${cy}" r="3.4" fill="${C.flamingo}"/>`
+        : `<circle cx="${X(f.time).toFixed(1)}" cy="${cy}" r="3" fill="none" stroke="${C.muted}" stroke-width="1.2"/>`;
+    }
+  }
+  for (let t = 0; t <= 30; t += 5) s += `<text x="${X(t)}" y="92" font-size="7" fill="${C.muted}" text-anchor="${t === 30 ? 'end' : 'middle'}">${t} s</text>`;
+  const c = F.filter(f => f.verdict === 'confirmed').length;
+  s += `<circle cx="${x0 + 4}" cy="101" r="3.4" fill="${C.flamingo}"/><text x="${x0 + 12}" y="103.5" font-size="7" fill="${C.muted}">CONFIRMED AND FIXED (${c})</text>`;
+  s += `<circle cx="${x0 + 184}" cy="101" r="3" fill="none" stroke="${C.muted}" stroke-width="1.2"/><text x="${x0 + 192}" y="103.5" font-size="7" fill="${C.muted}">REFUTED BY ITS SKEPTIC (${F.length - c})</text>`;
+  return s + '</svg>';
+}
+
 function cueHits(CUE) {
   return [CUE.dotPop, ...CUE.bounces, CUE.split1, CUE.split2, CUE.burst, CUE.weLock, ...CUE.make, ...CUE.dotInA, CUE.hop, CUE.hopLand,
     CUE.motion, ...CUE.letterLand, CUE.slam, CUE.build, CUE.collapse, CUE.ping, ...CUE.tittle, CUE.portal, CUE.code, ...CUE.locks, CUE.slash, CUE.fall,
@@ -175,7 +204,7 @@ function images3() {
     LUFS: minus(r128.I), PEAK: minus(r128.P), LRA: r128.LRA, CUES: String(hits.length), ONGRID: String(onGrid),
     FRAMES: '1,800', SUBFRAMES: '43,200', LINES: fmt(lines), MP4MB: mp4.toFixed(1), RENDERMIN: (secs / 60).toFixed(0),
     PARTICLES: fmt(stats.particles), VOICES: fmt(stats.voices),
-    ENERGY_SVG: energySvg(), GRID_SVG: gridSvg(CUE), SPECTRO_LABELS: spectroLabels(),
+    ENERGY_SVG: energySvg(), GRID_SVG: gridSvg(CUE), QA_SVG: qaSvg(), SPECTRO_LABELS: spectroLabels(),
   };
   let html = ['p1.html', 'p2.html', 'p3.html', 'p4.html', 'p4b.html', 'p5.html'].map(f => fs.readFileSync(path.join(DOC, f), 'utf8')).join('\n');
   html = html.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in tokens ? tokens[k] : m));
