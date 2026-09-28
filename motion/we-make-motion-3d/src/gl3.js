@@ -10,6 +10,8 @@ const hdr = (hex, k) => lin(hex).multiplyScalar(k);
 const VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }';
 const NOISE = `
   float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+  // precision-safe hash for large coordinates (grain): scales down before fract, so no striping at 4K
+  float hashF(vec2 p){ vec3 q = fract(vec3(p.xyx) * .1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
   float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
     return mix(mix(hash(i), hash(i + vec2(1., 0.)), f.x), mix(hash(i + vec2(0., 1.)), hash(i + vec2(1., 1.)), f.x), f.y); }
   float fbm(vec2 p){ float s = 0., a = .5; for (int i = 0; i < 5; i++) { s += a * vnoise(p); p *= 2.03; a *= .5; } return s; }`;
@@ -92,18 +94,21 @@ function initGL(canvas) {
   G3.finish = passMat(`${NOISE}
     uniform sampler2D t; uniform float gain, time, grain, dust; uniform vec2 res, weave; varying vec2 vUv;
     void main(){
-      vec2 uv = vUv + weave / res;
+      // film finish in design pixels (1920×1080), so grain, dust, scratches and weave look the same at any
+      // output size; at 4K each grain cell covers 2×2 pixels, and a downscale reproduces the 1080p grain
+      const vec2 D = vec2(1920., 1080.);
+      vec2 uv = vUv + weave / D;
       vec3 c = texture2D(t, uv).rgb * gain;
-      vec2 px = vUv * res;
+      vec2 px = vUv * D;
       float l = dot(c, vec3(.299, .587, .114));
-      float n = (hash(px + fract(time * 7.13) * 917.) - .5) + (hash(floor(px * .5) + fract(time * 3.1) * 331.) - .5) * .6;
+      float n = (hashF(floor(px) + fract(time * 7.13) * 917.) - .5) + (hashF(floor(px * .5) + fract(time * 3.1) * 331.) - .5) * .6;
       c += n * grain * (.45 + .75 * (1. - l));
       // dust: sparse specks on a coarse grid, new every frame
       vec2 cell = floor(px / 26.), f = fract(px / 26.) - .5;
       float hsel = hash(cell + floor(time * 24.) * 17.3);
       if (hsel > 1. - dust * .0012) { float rr = .05 + .18 * hash(cell * 3.1); float dd = smoothstep(rr, rr * .4, length(f + (hash(cell + 3.) - .5) * .5)); c = mix(c, vec3(hash(cell + 9.) > .5 ? .92 : .03), dd * .8); }
       // a rare vertical scratch
-      float sx = hash(vec2(floor(time * 24.), 4.)); if (sx < dust * .12) { float x = hash(vec2(floor(time * 24.), 5.)); float w = abs(vUv.x - x) * res.x; c = mix(c, vec3(.85), smoothstep(1.2, 0., w) * .35 * step(hash(vec2(floor(px.y / 40.), floor(time * 24.))), .8)); }
+      float sx = hash(vec2(floor(time * 24.), 4.)); if (sx < dust * .12) { float x = hash(vec2(floor(time * 24.), 5.)); float w = abs(vUv.x - x) * D.x; c = mix(c, vec3(.85), smoothstep(1.2, 0., w) * .35 * step(hash(vec2(floor(px.y / 40.), floor(time * 24.))), .8)); }
       gl_FragColor = vec4(clamp(c, 0., 1.), 1.);
     }`, { t: { value: null }, gain: { value: 1 }, time: { value: 0 }, grain: { value: 0.05 }, dust: { value: 0.5 },
     res: { value: new THREE.Vector2() }, weave: { value: new THREE.Vector2() } });
@@ -119,6 +124,8 @@ function initGL(canvas) {
   G3.hudTex.minFilter = THREE.LinearFilter; G3.hudTex.generateMipmaps = false;
 }
 
+// Canvas textures are drawn in design pixels; at larger outputs they are allocated k× bigger so text stays crisp.
+const texK = () => Math.max(1, Math.min(2, (G3.h || H) / H));
 function rtOf(w, h, type = THREE.HalfFloatType) {
   return new THREE.WebGLRenderTarget(w, h, { type, format: THREE.RGBAFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false, stencilBuffer: false });
 }
@@ -135,7 +142,10 @@ function sizeGL(w, h) {
   G3.mS = rtOf(w >> 2, h >> 2); G3.mB = rtOf(w >> 2, h >> 2);
   G3.hdrT = rtOf(w, h); G3.frame = rtOf(w, h); G3.accT = rtOf(w, h);
   G3.mips = [];
-  for (let i = 1; i <= 6; i++) { const mw = Math.max(1, w >> i), mh = Math.max(1, h >> i); G3.mips.push({ a: rtOf(mw, mh), b: rtOf(mw, mh), w: mw, h: mh }); }
+  // bloom keeps the same reach relative to the frame at any size: above 1080p the pyramid gains
+  // finer levels (built, so the bright pass never skips pixels) that are left out of the glow sum
+  G3.bSkip = Math.max(0, Math.round(Math.log2(h / H)));
+  for (let i = 1; i <= 6 + G3.bSkip; i++) { const mw = Math.max(1, w >> i), mh = Math.max(1, h >> i); G3.mips.push({ a: rtOf(mw, mh), b: rtOf(mw, mh), w: mw, h: mh }); }
   G3.hudCanvas.width = w; G3.hudCanvas.height = h;
   G3.matte.uniforms.res.value.set(w, h); G3.finish.uniforms.res.value.set(w, h);
 }
@@ -149,7 +159,7 @@ function blurMask(soft) {
   pass(G3.down, G3.mS);
   let src = G3.mS, dst = G3.mB;
   for (let i = 0; i < soft; i++) {
-    G3.down.uniforms.t.value = src.texture; G3.down.uniforms.px.value.set((1 + i) / G3.mS.width, (1 + i) / G3.mS.height);
+    G3.down.uniforms.t.value = src.texture; G3.down.uniforms.px.value.set(((1 + i) * G3.w) / W / G3.mS.width, ((1 + i) * G3.h) / H / G3.mS.height);
     pass(G3.down, dst); [src, dst] = [dst, src];
   }
   return src.texture;
@@ -161,13 +171,13 @@ function bloom(src) {
     G3.down.uniforms.t.value = m[i - 1].a.texture; G3.down.uniforms.px.value.set(1 / m[i - 1].w, 1 / m[i - 1].h);
     pass(G3.down, m[i].a);
   }
-  for (let i = m.length - 1; i > 0; i--) {
+  for (let i = m.length - 1; i > G3.bSkip; i--) {
     const from = i === m.length - 1 ? m[i].a : m[i].b;
     G3.up.uniforms.t.value = from.texture; G3.up.uniforms.tPrev.value = m[i - 1].a.texture;
     G3.up.uniforms.px.value.set(1 / m[i].w, 1 / m[i].h); G3.up.uniforms.addPrev.value = 1;
     pass(G3.up, m[i - 1].b);
   }
-  return m[0].b.texture;
+  return m[G3.bSkip].b.texture;
 }
 
 // One sub-frame: scenes → matte → bloom → grade, into G3.frame.

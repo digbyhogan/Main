@@ -21,7 +21,7 @@ onPrep3(() => {
   Cl.dotLight = new THREE.PointLight(lin(COL.flamingo), 0, 9, 2); s.add(Cl.dotLight);
   const r = 1, cyl = new THREE.CylinderGeometry(r, r, 1, 24, 1, true), ball = new THREE.SphereGeometry(r, 24, 16);
   Cl.arms = [0, 1, 2, 3, 4, 5].map(() => { const c = new THREE.Mesh(cyl, M3.glowPink), b = new THREE.Mesh(ball, M3.glowPink); s.add(c, b); return { c, b }; });
-  const nc = document.createElement('canvas'); nc.width = 1920; nc.height = 80;
+  const nc = document.createElement('canvas'); nc.width = 1920 * texK(); nc.height = 80 * texK();
   Cl.noteCanvas = nc; Cl.note = textPlane(nc, W * U, 0.8); Cl.note.position.set(0, wy(700) + 0.12, 0.1); s.add(Cl.note);
 });
 
@@ -106,7 +106,7 @@ function updateClaim(t, inkMode) {
   Cl.note.visible = typed.length > 0;
   if (typed.length) {
     const g = Cl.noteCanvas.getContext('2d'), nx = CX - FN.noteW / 2;
-    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1920, 80);
+    const nk = Cl.noteCanvas.width / 1920; g.setTransform(nk, 0, 0, nk, 0, 0); g.clearRect(0, 0, 1920, 80);
     g.font = FN.noteFont; g.textAlign = 'left';
     g.fillStyle = COL.flamingo; g.fillText('*', nx, 50);
     g.fillStyle = 'rgba(241,239,233,0.9)'; g.fillText(typed.slice(1), nx + textW(FN.noteFont, '*'), 50);
@@ -178,6 +178,7 @@ function hud3(t) {
 }
 function renderFrame3(t, samples = 1, shutter = 0.5) {
   t = clamp(t, 0, DUR - 1e-4);
+  FT = t; // typing is discrete: every sub-frame agrees on how many characters are out
   hud3(t);
   const r = G3.r;
   r.setRenderTarget(G3.accT); r.setClearColor(0x000000, 1); r.clear();
@@ -193,4 +194,5 @@ function renderFrame3(t, samples = 1, shutter = 0.5) {
   Fu.grain.value = S.grain; Fu.dust.value = S.dust;
   Fu.weave.value.set(noise1(t * 24, 31) * 0.45, noise1(t * 24, 32) * 0.45);
   pass(G3.finish, null);
+  FT = null;
 }

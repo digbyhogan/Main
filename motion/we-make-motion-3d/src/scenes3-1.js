@@ -146,7 +146,7 @@ onPrep3(() => {
   [MK.top, 540, MK.base].forEach((y, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.018), gm); m.position.set(0, wy(y), -0.6); s.add(m); K.grid.push({ m, h: true, s: CUE.grid + i * 0.06 }); });
   MK.boxes.flat().forEach((x, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.018, 1), gm); m.position.set(wx(x), 0, -0.6); s.add(m); K.grid.push({ m, h: false, s: CUE.grid + 0.1 + i * 0.03 }); });
   // specimen labels
-  const lab = document.createElement('canvas'); lab.width = 1920; lab.height = 1080;
+  const lab = document.createElement('canvas'); lab.width = 1920 * texK(); lab.height = 1080 * texK();
   K.labCanvas = lab; K.lab = textPlane(lab, W * U, H * U, { color: hdr('#4a4aff', 1.4) }); K.lab.position.z = -0.59; s.add(K.lab);
   K.dot = dotMesh(MAKE_DOT_R * U, M3.dotSolid); s.add(K.dot);
   K.dotLight = new THREE.PointLight(lin(COL.flamingo), 6, 7, 2); s.add(K.dotLight);
@@ -216,7 +216,7 @@ function updateMake(t) {
     if (h) m.scale.x = Math.max(e * 26, 1e-3); else m.scale.y = Math.max(e * 14, 1e-3);
   });
   const g = K.labCanvas.getContext('2d');
-  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+  const lk = K.labCanvas.width / W; g.setTransform(lk, 0, 0, lk, 0, 0); g.clearRect(0, 0, W, H);
   g.fillStyle = '#fff'; g.font = F.mono(15); g.textAlign = 'left';
   g.textAlign = 'right'; g.fillText(typeSlice('4 GLYPHS · 13 SEGMENTS · 1 DOT', t, 6.6, 40), 1721, 300);
   g.textAlign = 'left'; g.fillText(typeSlice('STROKE 76', t, 6.9, 30), 199, 800);

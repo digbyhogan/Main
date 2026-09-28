@@ -1,8 +1,8 @@
 // ═══ 3D · D MOTION — wave, echoes, a marquee with depth ══════════
 function rowCanvas(outline) {
-  const c = document.createElement('canvas'), f = F.disp(MO.rowSize), u = MO.rowUnit;
-  c.width = Math.ceil(u * 2); c.height = 200;
-  const g = c.getContext('2d');
+  const c = document.createElement('canvas'), f = F.disp(MO.rowSize), u = MO.rowUnit, k = texK();
+  c.width = Math.ceil(u * 2 * k); c.height = 200 * k;
+  const g = c.getContext('2d'); g.scale(c.width / (u * 2), k);
   g.font = f; g.textBaseline = 'alphabetic';
   const base = 100 + MO.row.asc / 2;
   for (let k = 0; k < 2; k++) {
@@ -174,8 +174,8 @@ function updateWithout(t) {
 
 // ═══ 3D · F CODE — a field of source, extruded brackets, a blade ═
 function codeLayer(seed) {
-  const c = document.createElement('canvas'); c.width = 2048; c.height = 1152;
-  const g = c.getContext('2d'); g.font = F.mono(24); g.textAlign = 'left';
+  const c = document.createElement('canvas'), k = texK(); c.width = 2048 * k; c.height = 1152 * k;
+  const g = c.getContext('2d'); g.scale(k, k); g.font = F.mono(24); g.textAlign = 'left';
   if (seed > 0) g.filter = 'blur(1px)'; // deeper layers a touch softer
   const cw = textW(F.mono(24), 'M');
   for (let j = 0; j < 30; j++) {

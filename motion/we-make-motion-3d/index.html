@@ -1109,7 +1109,7 @@ function sceneCode(g, t) {
 
 // ═══ G · THE CLAIM (22 – 26s)  &  H · THE FINE PRINT (26 – 30s) ═══
 const FN = {};
-const FOOTNOTE = '*Except this one. This one is 2,989 lines of code.';
+const FOOTNOTE = '*Except this one. This one is 3,001 lines of code.';
 onPrep(() => {
   const L1 = F.disp(150), mw = textW(F.disp(100), 'MOTION');
   const ms = Math.min(310, (1620 / mw) * 100);
@@ -1766,6 +1766,8 @@ const hdr = (hex, k) => lin(hex).multiplyScalar(k);
 const VS = 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0., 1.); }';
 const NOISE = `
   float hash(vec2 p){ p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+  // precision-safe hash for large coordinates (grain): scales down before fract, so no striping at 4K
+  float hashF(vec2 p){ vec3 q = fract(vec3(p.xyx) * .1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
   float vnoise(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
     return mix(mix(hash(i), hash(i + vec2(1., 0.)), f.x), mix(hash(i + vec2(0., 1.)), hash(i + vec2(1., 1.)), f.x), f.y); }
   float fbm(vec2 p){ float s = 0., a = .5; for (int i = 0; i < 5; i++) { s += a * vnoise(p); p *= 2.03; a *= .5; } return s; }`;
@@ -1848,18 +1850,21 @@ function initGL(canvas) {
   G3.finish = passMat(`${NOISE}
     uniform sampler2D t; uniform float gain, time, grain, dust; uniform vec2 res, weave; varying vec2 vUv;
     void main(){
-      vec2 uv = vUv + weave / res;
+      // film finish in design pixels (1920×1080), so grain, dust, scratches and weave look the same at any
+      // output size; at 4K each grain cell covers 2×2 pixels, and a downscale reproduces the 1080p grain
+      const vec2 D = vec2(1920., 1080.);
+      vec2 uv = vUv + weave / D;
       vec3 c = texture2D(t, uv).rgb * gain;
-      vec2 px = vUv * res;
+      vec2 px = vUv * D;
       float l = dot(c, vec3(.299, .587, .114));
-      float n = (hash(px + fract(time * 7.13) * 917.) - .5) + (hash(floor(px * .5) + fract(time * 3.1) * 331.) - .5) * .6;
+      float n = (hashF(floor(px) + fract(time * 7.13) * 917.) - .5) + (hashF(floor(px * .5) + fract(time * 3.1) * 331.) - .5) * .6;
       c += n * grain * (.45 + .75 * (1. - l));
       // dust: sparse specks on a coarse grid, new every frame
       vec2 cell = floor(px / 26.), f = fract(px / 26.) - .5;
       float hsel = hash(cell + floor(time * 24.) * 17.3);
       if (hsel > 1. - dust * .0012) { float rr = .05 + .18 * hash(cell * 3.1); float dd = smoothstep(rr, rr * .4, length(f + (hash(cell + 3.) - .5) * .5)); c = mix(c, vec3(hash(cell + 9.) > .5 ? .92 : .03), dd * .8); }
       // a rare vertical scratch
-      float sx = hash(vec2(floor(time * 24.), 4.)); if (sx < dust * .12) { float x = hash(vec2(floor(time * 24.), 5.)); float w = abs(vUv.x - x) * res.x; c = mix(c, vec3(.85), smoothstep(1.2, 0., w) * .35 * step(hash(vec2(floor(px.y / 40.), floor(time * 24.))), .8)); }
+      float sx = hash(vec2(floor(time * 24.), 4.)); if (sx < dust * .12) { float x = hash(vec2(floor(time * 24.), 5.)); float w = abs(vUv.x - x) * D.x; c = mix(c, vec3(.85), smoothstep(1.2, 0., w) * .35 * step(hash(vec2(floor(px.y / 40.), floor(time * 24.))), .8)); }
       gl_FragColor = vec4(clamp(c, 0., 1.), 1.);
     }`, { t: { value: null }, gain: { value: 1 }, time: { value: 0 }, grain: { value: 0.05 }, dust: { value: 0.5 },
     res: { value: new THREE.Vector2() }, weave: { value: new THREE.Vector2() } });
@@ -1875,6 +1880,8 @@ function initGL(canvas) {
   G3.hudTex.minFilter = THREE.LinearFilter; G3.hudTex.generateMipmaps = false;
 }
 
+// Canvas textures are drawn in design pixels; at larger outputs they are allocated k× bigger so text stays crisp.
+const texK = () => Math.max(1, Math.min(2, (G3.h || H) / H));
 function rtOf(w, h, type = THREE.HalfFloatType) {
   return new THREE.WebGLRenderTarget(w, h, { type, format: THREE.RGBAFormat, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: false, stencilBuffer: false });
 }
@@ -1891,7 +1898,10 @@ function sizeGL(w, h) {
   G3.mS = rtOf(w >> 2, h >> 2); G3.mB = rtOf(w >> 2, h >> 2);
   G3.hdrT = rtOf(w, h); G3.frame = rtOf(w, h); G3.accT = rtOf(w, h);
   G3.mips = [];
-  for (let i = 1; i <= 6; i++) { const mw = Math.max(1, w >> i), mh = Math.max(1, h >> i); G3.mips.push({ a: rtOf(mw, mh), b: rtOf(mw, mh), w: mw, h: mh }); }
+  // bloom keeps the same reach relative to the frame at any size: above 1080p the pyramid gains
+  // finer levels (built, so the bright pass never skips pixels) that are left out of the glow sum
+  G3.bSkip = Math.max(0, Math.round(Math.log2(h / H)));
+  for (let i = 1; i <= 6 + G3.bSkip; i++) { const mw = Math.max(1, w >> i), mh = Math.max(1, h >> i); G3.mips.push({ a: rtOf(mw, mh), b: rtOf(mw, mh), w: mw, h: mh }); }
   G3.hudCanvas.width = w; G3.hudCanvas.height = h;
   G3.matte.uniforms.res.value.set(w, h); G3.finish.uniforms.res.value.set(w, h);
 }
@@ -1905,7 +1915,7 @@ function blurMask(soft) {
   pass(G3.down, G3.mS);
   let src = G3.mS, dst = G3.mB;
   for (let i = 0; i < soft; i++) {
-    G3.down.uniforms.t.value = src.texture; G3.down.uniforms.px.value.set((1 + i) / G3.mS.width, (1 + i) / G3.mS.height);
+    G3.down.uniforms.t.value = src.texture; G3.down.uniforms.px.value.set(((1 + i) * G3.w) / W / G3.mS.width, ((1 + i) * G3.h) / H / G3.mS.height);
     pass(G3.down, dst); [src, dst] = [dst, src];
   }
   return src.texture;
@@ -1917,13 +1927,13 @@ function bloom(src) {
     G3.down.uniforms.t.value = m[i - 1].a.texture; G3.down.uniforms.px.value.set(1 / m[i - 1].w, 1 / m[i - 1].h);
     pass(G3.down, m[i].a);
   }
-  for (let i = m.length - 1; i > 0; i--) {
+  for (let i = m.length - 1; i > G3.bSkip; i--) {
     const from = i === m.length - 1 ? m[i].a : m[i].b;
     G3.up.uniforms.t.value = from.texture; G3.up.uniforms.tPrev.value = m[i - 1].a.texture;
     G3.up.uniforms.px.value.set(1 / m[i].w, 1 / m[i].h); G3.up.uniforms.addPrev.value = 1;
     pass(G3.up, m[i - 1].b);
   }
-  return m[0].b.texture;
+  return m[G3.bSkip].b.texture;
 }
 
 // One sub-frame: scenes → matte → bloom → grade, into G3.frame.
@@ -2270,7 +2280,7 @@ onPrep3(() => {
   [MK.top, 540, MK.base].forEach((y, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 0.018), gm); m.position.set(0, wy(y), -0.6); s.add(m); K.grid.push({ m, h: true, s: CUE.grid + i * 0.06 }); });
   MK.boxes.flat().forEach((x, i) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(0.018, 1), gm); m.position.set(wx(x), 0, -0.6); s.add(m); K.grid.push({ m, h: false, s: CUE.grid + 0.1 + i * 0.03 }); });
   // specimen labels
-  const lab = document.createElement('canvas'); lab.width = 1920; lab.height = 1080;
+  const lab = document.createElement('canvas'); lab.width = 1920 * texK(); lab.height = 1080 * texK();
   K.labCanvas = lab; K.lab = textPlane(lab, W * U, H * U, { color: hdr('#4a4aff', 1.4) }); K.lab.position.z = -0.59; s.add(K.lab);
   K.dot = dotMesh(MAKE_DOT_R * U, M3.dotSolid); s.add(K.dot);
   K.dotLight = new THREE.PointLight(lin(COL.flamingo), 6, 7, 2); s.add(K.dotLight);
@@ -2340,7 +2350,7 @@ function updateMake(t) {
     if (h) m.scale.x = Math.max(e * 26, 1e-3); else m.scale.y = Math.max(e * 14, 1e-3);
   });
   const g = K.labCanvas.getContext('2d');
-  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
+  const lk = K.labCanvas.width / W; g.setTransform(lk, 0, 0, lk, 0, 0); g.clearRect(0, 0, W, H);
   g.fillStyle = '#fff'; g.font = F.mono(15); g.textAlign = 'left';
   g.textAlign = 'right'; g.fillText(typeSlice('4 GLYPHS · 13 SEGMENTS · 1 DOT', t, 6.6, 40), 1721, 300);
   g.textAlign = 'left'; g.fillText(typeSlice('STROKE 76', t, 6.9, 30), 199, 800);
@@ -2383,9 +2393,9 @@ function toScreen(v, cam) { const p = v.clone().project(cam); return [(p.x * 0.5
 
 // ═══ 3D · D MOTION — wave, echoes, a marquee with depth ══════════
 function rowCanvas(outline) {
-  const c = document.createElement('canvas'), f = F.disp(MO.rowSize), u = MO.rowUnit;
-  c.width = Math.ceil(u * 2); c.height = 200;
-  const g = c.getContext('2d');
+  const c = document.createElement('canvas'), f = F.disp(MO.rowSize), u = MO.rowUnit, k = texK();
+  c.width = Math.ceil(u * 2 * k); c.height = 200 * k;
+  const g = c.getContext('2d'); g.scale(c.width / (u * 2), k);
   g.font = f; g.textBaseline = 'alphabetic';
   const base = 100 + MO.row.asc / 2;
   for (let k = 0; k < 2; k++) {
@@ -2557,8 +2567,8 @@ function updateWithout(t) {
 
 // ═══ 3D · F CODE — a field of source, extruded brackets, a blade ═
 function codeLayer(seed) {
-  const c = document.createElement('canvas'); c.width = 2048; c.height = 1152;
-  const g = c.getContext('2d'); g.font = F.mono(24); g.textAlign = 'left';
+  const c = document.createElement('canvas'), k = texK(); c.width = 2048 * k; c.height = 1152 * k;
+  const g = c.getContext('2d'); g.scale(k, k); g.font = F.mono(24); g.textAlign = 'left';
   if (seed > 0) g.filter = 'blur(1px)'; // deeper layers a touch softer
   const cw = textW(F.mono(24), 'M');
   for (let j = 0; j < 30; j++) {
@@ -2667,7 +2677,7 @@ onPrep3(() => {
   Cl.dotLight = new THREE.PointLight(lin(COL.flamingo), 0, 9, 2); s.add(Cl.dotLight);
   const r = 1, cyl = new THREE.CylinderGeometry(r, r, 1, 24, 1, true), ball = new THREE.SphereGeometry(r, 24, 16);
   Cl.arms = [0, 1, 2, 3, 4, 5].map(() => { const c = new THREE.Mesh(cyl, M3.glowPink), b = new THREE.Mesh(ball, M3.glowPink); s.add(c, b); return { c, b }; });
-  const nc = document.createElement('canvas'); nc.width = 1920; nc.height = 80;
+  const nc = document.createElement('canvas'); nc.width = 1920 * texK(); nc.height = 80 * texK();
   Cl.noteCanvas = nc; Cl.note = textPlane(nc, W * U, 0.8); Cl.note.position.set(0, wy(700) + 0.12, 0.1); s.add(Cl.note);
 });
 
@@ -2752,7 +2762,7 @@ function updateClaim(t, inkMode) {
   Cl.note.visible = typed.length > 0;
   if (typed.length) {
     const g = Cl.noteCanvas.getContext('2d'), nx = CX - FN.noteW / 2;
-    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, 1920, 80);
+    const nk = Cl.noteCanvas.width / 1920; g.setTransform(nk, 0, 0, nk, 0, 0); g.clearRect(0, 0, 1920, 80);
     g.font = FN.noteFont; g.textAlign = 'left';
     g.fillStyle = COL.flamingo; g.fillText('*', nx, 50);
     g.fillStyle = 'rgba(241,239,233,0.9)'; g.fillText(typed.slice(1), nx + textW(FN.noteFont, '*'), 50);
@@ -2824,6 +2834,7 @@ function hud3(t) {
 }
 function renderFrame3(t, samples = 1, shutter = 0.5) {
   t = clamp(t, 0, DUR - 1e-4);
+  FT = t; // typing is discrete: every sub-frame agrees on how many characters are out
   hud3(t);
   const r = G3.r;
   r.setRenderTarget(G3.accT); r.setClearColor(0x000000, 1); r.clear();
@@ -2839,6 +2850,7 @@ function renderFrame3(t, samples = 1, shutter = 0.5) {
   Fu.grain.value = S.grain; Fu.dust.value = S.dust;
   Fu.weave.value.set(noise1(t * 24, 31) * 0.45, noise1(t * 24, 32) * 0.45);
   pass(G3.finish, null);
+  FT = null;
 }
 
 // ═══ 3D · PLAYER ═════════════════════════════════════════════════
