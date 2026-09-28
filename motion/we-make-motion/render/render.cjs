@@ -98,7 +98,7 @@ const save = (file, dataUrl) => fs.writeFileSync(file, Buffer.from(dataUrl.split
   const mp4 = path.join(ROOT, arg('out', 'we-make-motion.mp4'));
   execFileSync(FFMPEG, ['-y', '-hide_banner', '-loglevel', 'error',
     '-framerate', String(FPS), '-i', path.join(frames, 'f%05d.png'), '-i', wav,
-    '-vf', 'noise=c0s=5:c0f=t,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '18',
-    '-profile:v', 'high', '-tune', 'grain', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', mp4], { stdio: 'inherit' });
+    '-vf', 'noise=c0s=2:c0f=t,format=yuv420p', '-c:v', 'libx264', '-preset', 'slow', '-crf', '18',
+    '-profile:v', 'high', '-c:a', 'aac', '-b:a', '256k', '-shortest', '-movflags', '+faststart', mp4], { stdio: 'inherit' });
   console.log(`film → ${mp4} (${(fs.statSync(mp4).size / 1e6).toFixed(1)} MB) in ${((Date.now() - t0) / 1000).toFixed(0)} s`);
 })().catch(e => { console.error(e); process.exit(1); });

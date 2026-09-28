@@ -164,6 +164,8 @@ const F = {
 // Render options: realtime playback fakes motion blur with streaks,
 // the offline renderer switches them off and accumulates sub-frames instead.
 const RO = { streaks: true, grain: true, shake: 1 };
+// Render scale (canvas px per design px). Pixel-based filters multiply by it so blur looks the same at any resolution.
+let RS = 1;
 
 // ─── Maths ────────────────────────────────────────────────────────
 const clamp = (x, a = 0, b = 1) => (x < a ? a : x > b ? b : x);
@@ -867,7 +869,7 @@ function sceneWithout(g, t) {
     const x = WO.x + gl.x + woTrack(i, t), y = WO.y + dy;
     g.save();
     g.globalAlpha = a;
-    if (blur > 0.4) g.filter = `blur(${blur.toFixed(1)}px)`;
+    if (blur > 0.4) g.filter = `blur(${(blur * RS).toFixed(1)}px)`;
     if (i === 1) { // hide the i's own tittle; the dot is about to claim it
       g.beginPath(); g.rect(x - 200, y - 400, 400, 600);
       g.arc(x + WO.tit.x, y + WO.tit.y, WO.tit.r * 1.7, 0, TAU, true); g.clip('evenodd');
@@ -1026,7 +1028,7 @@ function sceneCode(g, t) {
 
 // ═══ G · THE CLAIM (22 – 26s)  &  H · THE FINE PRINT (26 – 30s) ═══
 const FN = {};
-const FOOTNOTE = '*Except this one. This one is 1,837 lines of code.';
+const FOOTNOTE = '*Except this one. This one is 1,840 lines of code.';
 onPrep(() => {
   const L1 = F.disp(150), mw = textW(F.disp(100), 'MOTION');
   const ms = Math.min(310, (1620 / mw) * 100);
@@ -1087,7 +1089,7 @@ function drawWordIn(g, w, i, t) {
       const st = t0 + k * 0.04, a = Ez.outSine(seg(t, st, st + 0.45));
       if (a <= 0) return;
       g.save(); g.globalAlpha = a;
-      if (a < 0.97) g.filter = `blur(${(10 * (1 - a)).toFixed(1)}px)`;
+      if (a < 0.97) g.filter = `blur(${(10 * (1 - a) * RS).toFixed(1)}px)`;
       g.fillText(gl.ch, w.x + gl.x, w.y + 16 * (1 - a)); g.restore();
     });
   } else { // decoded
@@ -1263,6 +1265,7 @@ function post(canvas, g) {
 function renderFrame(canvas, t, withPost = true) {
   const g = canvas.getContext('2d');
   const s = canvas.width / W;
+  RS = s;
   g.setTransform(s, 0, 0, s, 0, 0);
   g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; g.filter = 'none';
   t = clamp(t, 0, DUR - 1e-4);
@@ -1830,7 +1833,7 @@ function startPlayer() {
     .catch(() => { big.disabled = false; big.querySelector('span').textContent = 'Play (no sound)'; });
 }
 
-window.MWC = { prepare, renderFrame, renderAccum, renderSoundtrack, wavBytes, RO, DUR, FPS, W, H };
+window.MWC = { prepare, renderFrame, renderAccum, renderSoundtrack, wavBytes, RO, DUR, FPS, W, H, stats: () => ({ particles: WE.parts.length }) };
 if (!window.MWC_HEADLESS) prepare().then(startPlayer);
 })();
 </script>
