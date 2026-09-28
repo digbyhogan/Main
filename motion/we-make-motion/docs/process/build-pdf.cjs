@@ -119,6 +119,10 @@ const frame3 = t => fromVideo(path.join(ROOT, '..', 'we-make-motion-3d', 'we-mak
 function images3() {
   fs.mkdirSync(IMG3, { recursive: true });
   for (const t of [4.4, 11.0, 13.2, 16.9, 23.2]) ff(['-i', frame3(t), '-vf', 'scale=1280:-1', '-q:v', '3', path.join(IMG3, `f-${t.toFixed(2)}.jpg`)]);
+  // review chapter: the final frame at each fixed flaw's timecode (the befores are archived QA frames)
+  for (const [src, t, name] of [[frame, 11.8, 'wave'], [frame, 24.2, 'code'], [frame3, 8.0, 'labels'], [frame3, 20.8, 'tumble']]) {
+    ff(['-i', src(t), '-vf', 'scale=960:-1', '-q:v', '3', path.join(IMG3, `qa-${name}.jpg`)]);
+  }
   const times = [0.95, 1.02, 2.6, 3.3, 4.3, 5.8, 6.8, 7.6, 8.8, 9.85, 10.8, 11.4, 12.6, 14.8, 15.5, 16.9, 17.8, 19.5, 20.3, 21.9, 23.3, 25.8, 26.5, 28.8];
   const tmp = path.join(OUT3, 'final-sheet-src'); fs.mkdirSync(tmp, { recursive: true });
   times.forEach((t, i) => fs.copyFileSync(frame3(t), path.join(tmp, `${String(i).padStart(3, '0')}.png`)));
@@ -165,14 +169,15 @@ function images3() {
   const E3 = path.join(ROOT, '..', 'we-make-motion-3d');
   const tokens = {
     SUB3: '5,400', RENDER3MIN: String(Math.round(+minsIn(path.join(E3, 'render', 'out-4k.log')) || 0)),
-    RENDER4KMIN: String(Math.round(+minsIn(path.join(ROOT, 'render', 'out-4k-full.log')) || 0)),
+    // the benchmark: the whole 2D film rendered alone on the machine (the final re-render shared it with the 3D render)
+    RENDER4KMIN: String(Math.round(+minsIn(path.join(ROOT, 'render', 'out-4k-bench.log')) || 0)),
     MP44KMB: mb(path.join(ROOT, 'we-make-motion-4k.mp4')), MP43DMB: mb(path.join(E3, 'we-make-motion-3d.mp4')), MP43D4KMB: mb(path.join(E3, 'we-make-motion-3d-4k.mp4')),
     LUFS: minus(r128.I), PEAK: minus(r128.P), LRA: r128.LRA, CUES: String(hits.length), ONGRID: String(onGrid),
     FRAMES: '1,800', SUBFRAMES: '43,200', LINES: fmt(lines), MP4MB: mp4.toFixed(1), RENDERMIN: (secs / 60).toFixed(0),
     PARTICLES: fmt(stats.particles), VOICES: fmt(stats.voices),
     ENERGY_SVG: energySvg(), GRID_SVG: gridSvg(CUE), SPECTRO_LABELS: spectroLabels(),
   };
-  let html = ['p1.html', 'p2.html', 'p3.html', 'p4.html', 'p5.html'].map(f => fs.readFileSync(path.join(DOC, f), 'utf8')).join('\n');
+  let html = ['p1.html', 'p2.html', 'p3.html', 'p4.html', 'p4b.html', 'p5.html'].map(f => fs.readFileSync(path.join(DOC, f), 'utf8')).join('\n');
   html = html.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in tokens ? tokens[k] : m));
   // number the folios from page order, so pages can be inserted freely
   let pageNo = 0;
