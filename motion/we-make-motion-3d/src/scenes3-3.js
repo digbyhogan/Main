@@ -11,13 +11,13 @@ onPrep3(() => {
   const fk = ['disp', 'disp', 'disp', 'serif', 'mono'], depth = [0.5, 0.5, 0.8, 0.3, 0.5];
   Cl.words = FN.words.map((w, i) => {
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    const mats = M3.chalk.map(m => { const c = m.clone(); c.clippingPlanes = [plane]; c.transparent = i === 3; return c; });
+    const mats = M3.chalk.map(m => { const c = m.clone(); c.clippingPlanes = [plane]; c.clipShadows = true; c.transparent = true; return c; });
     const w3 = word3(fk[i], w.str, w.size * U, depth[i], mats, { bevel: i === 3 ? 0.012 : 0.035 });
     w3.group.position.set(wx(w.x), wy(w.y), 0); s.add(w3.group);
     return { w, w3, plane, mats };
   });
-  Cl.hl = [0, 1, 2, 3].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6), transparent: true })); s.add(m); return m; });
-  Cl.dot = dotMesh(1); s.add(Cl.dot);
+  Cl.hl = [0, 1, 2, 3].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6) })); m.visible = false; s.add(m); return m; });
+  Cl.dot = dotMesh(1, M3.glowPinkSoft); s.add(Cl.dot);
   Cl.dotLight = new THREE.PointLight(lin(COL.flamingo), 0, 9, 2); s.add(Cl.dotLight);
   const r = 1, cyl = new THREE.CylinderGeometry(r, r, 1, 24, 1, true), ball = new THREE.SphereGeometry(r, 24, 16);
   Cl.arms = [0, 1, 2, 3, 4, 5].map(() => { const c = new THREE.Mesh(cyl, M3.glowPink), b = new THREE.Mesh(ball, M3.glowPink); s.add(c, b); return { c, b }; });
@@ -38,7 +38,8 @@ function updateClaim(t, inkMode) {
 
   Cl.words.forEach(({ w, w3, plane, mats }, i) => {
     const t0 = CUE.final[i];
-    w3.group.visible = t >= t0 - 0.15 && out > 0;
+    w3.group.visible = t >= t0 - 0.15 && out > 0.001;
+    if (i !== 3) mats.forEach(m => (m.opacity = out)); // the whole line fades together
     plane.constant = 1e3; // no clip unless a reveal needs it
     w3.letters.forEach((L, k) => { L.mesh.position.set(L.x + L.w / 2, 0, 0); L.mesh.scale.set(1, 1, 1); L.mesh.rotation.set(0, 0, 0); L.mesh.visible = true; });
     if (t < CUE.reflow) {
@@ -56,16 +57,15 @@ function updateClaim(t, inkMode) {
           const lock = t0 + k * 0.0625;
           L.mesh.visible = t >= t0 - 0.12 + k * 0.02;
           L.mesh.geometry = glyph3('mono', t < lock ? scr(t, k + 20) : L.ch, w.size * U, 0.5, 0.035).geo;
-          const hl = t >= lock ? 1 - seg(t, lock + 0.05, lock + 0.35) : 0, h = Cl.hl[k];
-          h.visible = hl > 0; h.material.opacity = hl;
-          h.scale.set(L.w, (w.lay.asc + 28) * U, 1); h.position.set(wx(w.x) + L.x + L.w / 2, wy(w.y) + (w.lay.asc / 2) * U, -0.35);
+          const out2 = Ez.inOutCubic(seg(t, lock + 0.05, lock + 0.3)), h = Cl.hl[k]; // wipes off at full strength
+          h.visible = t >= lock && out2 < 1;
+          h.scale.set(L.w * (1 - out2), (w.lay.asc + 28) * U, 1); h.position.set(wx(w.x) + L.x + L.w * out2 + (L.w * (1 - out2)) / 2, wy(w.y) + (w.lay.asc / 2) * U, -0.35);
         });
       }
-    } else { // FLIP reflow into one line
-      const p = Ez.inOutBack(seg(t, CUE.reflow + i * 0.05, CUE.reflow + i * 0.05 + 0.7), 1.2);
-      const arc = Math.sin(Math.PI * clamp(p)) * 70 * (i % 2 ? 1 : -1);
-      w3.group.position.set(wx(lerp(w.x, w.tx, p)), wy(lerp(w.y, w.ty, p) + arc), 0);
-      w3.group.scale.setScalar(lerp(1, w.s, p));
+    } else { // FLIP reflow into one line: shrink in place, then travel
+      const f = reflowOf(w, i, t);
+      w3.group.position.set(wx(f.x), wy(f.y), 0);
+      w3.group.scale.setScalar(f.s);
       if (i === 3) mats.forEach(m => (m.opacity = out));
       if (i === 4) w3.letters.forEach(L => (L.mesh.geometry = glyph3('mono', L.ch, w.size * U, 0.5, 0.035).geo));
       Cl.hl.forEach(h => (h.visible = false));
@@ -76,13 +76,14 @@ function updateClaim(t, inkMode) {
   let x, y, r, vis = true;
   if (t < CUE.reflow) { const f = finDot(t); vis = !!f; if (f) { x = f.x; y = f.y; r = f.r; Cl.dot.scale.set(f.sx * r * U, f.sy * r * U, f.sx * r * U); } }
   else {
-    const p = Ez.inOutBack(seg(t, 26.25, 26.95), 1.2), up = -30 * Ez.outBack(seg(t, CUE.asterisk, 27.5), 2);
-    x = lerp(FN.dot.x, FN.dotTo.x, p); y = lerp(FN.dot.y, FN.dotTo.y, p) + up; r = lerp(FN.dot.r, FN.dotTo.r, p);
+    const rd = reflowDot(t), up = -30 * Ez.outBack(seg(t, CUE.asterisk, 27.5), 2);
+    x = rd.x; y = rd.y + up; r = rd.r;
     const home = Ez.inOutCubic(seg(t, CUE.fadeOut + 0.2, CUE.fadeOut + 0.65));
     x = lerp(x, CX, home); y = lerp(y, CY, home); r = lerp(r, DOT_R, home);
   }
   const popOut = Ez.inBack(seg(t, 29.7, 29.85), 2.5), retract = 1 - Ez.inBack(seg(t, CUE.fadeOut + 0.45, CUE.fadeOut + 0.65));
   Cl.dot.visible = vis && popOut < 1; Cl.dotLight.intensity = Cl.dot.visible ? 3 : 0;
+  Cl.dot.material = inkMode ? M3.glowPink : M3.glowPinkSoft; // pink on ultramarine, glowing on ink
   if (vis) {
     const core = t >= CUE.reflow ? r * (1 - popOut) * lerp(1, 0.62, seg(t, CUE.asterisk, 27.4) * retract) : null;
     Cl.dot.position.set(wx(x), wy(y), 0.1); if (core !== null) Cl.dot.scale.setScalar(Math.max(core, 1e-3) * U);
@@ -135,7 +136,7 @@ function shot(t) {
   if (t < 16) {
     updateMotion(t);
     const b = seg(t, CUE.build, CUE.collapse);
-    return Object.assign(base, { a: view(S3.motion), bloom: 0.55 + 0.6 * b + 0.9 * pulse(t, CUE.slam, 6) + 1.5 * seg(t, 15.8, 16), exposure: 1 + 0.35 * pulse(t, CUE.slam, 8), ca: 0.0022 + 0.006 * b });
+    return Object.assign(base, { a: view(S3.motion), bloom: 0.55 + 0.6 * b + 0.3 * pulse(t, CUE.slam, 6) + 1.5 * seg(t, 15.8, 16), exposure: 1 + 0.08 * pulse(t, CUE.slam, 8), ca: 0.0022 + 0.006 * b });
   }
   if (t < CUE.portal) { updateWithout(t); return Object.assign(base, { a: view(S3.without), bloom: 0.4, dust: 0.3, vig: 0.28, lift: 0 }); }
   if (t < 18) {
@@ -161,7 +162,15 @@ function shot(t) {
 function hud3(t) {
   const c = G3.hudCanvas, g = c.getContext('2d'), s = c.width / W;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height);
-  g.setTransform(s, 0, 0, s, 0, 0); hud(g, t);
+  g.setTransform(s, 0, 0, s, 0, 0);
+  // in CODE the source layers run under the HUD corners: lay a soft ink scrim behind the text
+  const sa = seg(t, 18.3, 18.55) * (1 - seg(t, 21.4, 21.6));
+  if (sa > 0) for (const [y0, y1] of [[0, 130], [H, H - 120]]) {
+    const gr = g.createLinearGradient(0, y0, 0, y1);
+    gr.addColorStop(0, `rgba(17,17,22,${0.88 * sa})`); gr.addColorStop(1, 'rgba(17,17,22,0)');
+    g.fillStyle = gr; g.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0));
+  }
+  hud(g, t);
   G3.hudTex.needsUpdate = true;
 }
 function renderFrame3(t, samples = 1, shutter = 0.5) {

@@ -56,7 +56,10 @@ function surfDot(t) {
 function moLetter(i, t) {
   const gl = MO.lay.list[i], s = 10.25 + i * 0.125;
   const e = Ez.outQuart(seg(t, s, s + 1.1));
-  const x = lerp(W + 200 + i * 60, MO.x + gl.x + gl.w / 2, e);
+  // looser tracking while the letters ride and tilt, so neighbours never sweep into each other;
+  // it tightens to the word's real spacing as the wave flattens into the slam
+  const spread = lerp(1.22, 1, Ez.inOutCubic(seg(t, 11.65, 12.0)));
+  const x = lerp(W + 200 + i * 60, CX + (MO.x + gl.x + gl.w / 2 - CX) * spread, e);
   return { x, y: waveY(x, t) - 3, r: Math.atan(waveSlope(x, t)), gl };
 }
 

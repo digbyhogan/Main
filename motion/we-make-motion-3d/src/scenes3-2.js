@@ -19,7 +19,7 @@ onPrep3(() => {
   s.add(new THREE.HemisphereLight(lin('#ffffff'), lin('#1a1aa0'), 0.35));
   Mo.key = new THREE.DirectionalLight(lin('#ffffff'), 0.9); Mo.key.position.set(6, 8, 10); Mo.key.castShadow = true;
   Object.assign(Mo.key.shadow.camera, { left: -14, right: 14, top: 9, bottom: -9, near: 1, far: 40 }); Mo.key.shadow.mapSize.set(2048, 1024); s.add(Mo.key);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), M3.ultraWall); floor.rotation.x = -Math.PI / 2; floor.position.y = -4.2; floor.receiveShadow = true; s.add(floor);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), M3.ultraWall); floor.rotation.x = -Math.PI / 2; floor.position.y = -9.5; floor.receiveShadow = true; s.add(floor); // below the lowest marquee strip
   const back = new THREE.Mesh(new THREE.PlaneGeometry(160, 60), M3.ultraWall); back.position.z = -22; back.receiveShadow = true; s.add(back);
   Mo.all = new THREE.Group(); s.add(Mo.all);
   // the wave: a glowing ribbon whose vertices follow waveY()
@@ -59,7 +59,7 @@ function updateMotion(t) {
   cam.fov = fov; cam.position.set(0, lerp(0, 0.4, b), dist); cam.lookAt(0, 0, 0); cam.rotation.z = -0.09 * b * (1 - col);
   shake3(cam, t);
   Mo.all.scale.set(1, 1 - 0.985 * col, 1);
-  Mo.key.intensity = 0.9 + 1.5 * pulse(t, CUE.slam, 6);
+  Mo.key.intensity = 0.9 + 0.4 * pulse(t, CUE.slam, 6);
 
   // ribbon
   const pos = Mo.ribbon.geometry.attributes.position, N = pos.count / 2;
@@ -147,10 +147,12 @@ onPrep3(() => {
 function updateWithout(t) {
   const Wo = S3.without, cam = Wo.cam;
   // the flight: drift, then accelerate through the counter of the o
-  const pp = Ez.inCubic(seg(t, CUE.portal, 18.0)), drift = seg(t, 16.3, CUE.portal);
-  const target = Wo.hole;
-  cam.position.set(lerp(lerp(0.3, -0.2, drift), target.x, pp), lerp(0, target.y, pp), lerp(lerp(CAM_Z, CAM_Z * 0.95, drift), target.z - 2.5, pp));
-  cam.fov = FOV; cam.lookAt(lerp(0, target.x, Ez.inOutCubic(seg(t, CUE.portal, 17.8))), lerp(0, target.y, Ez.inOutCubic(seg(t, CUE.portal, 17.8))), -8 * pp);
+  const pp = seg(t, CUE.portal, 18.0), drift = seg(t, 16.3, CUE.portal), target = Wo.hole;
+  // exponential approach: the o's counter grows at a steady rate and fills the frame on the cut
+  const d0 = lerp(CAM_Z, CAM_Z * 0.95, drift) - target.z, dist = d0 * Math.pow(0.3 / d0, Ez.inSine(pp));
+  const aim = Ez.inOutCubic(seg(t, CUE.portal, 17.7));
+  cam.position.set(lerp(lerp(0.3, -0.2, drift), target.x, aim), lerp(0, target.y, aim), target.z + dist);
+  cam.fov = FOV; cam.lookAt(lerp(0, target.x, aim), lerp(0, target.y, aim), target.z - 5);
   const hl = 1 - Ez.inOutExpo(seg(t, 16.0, 16.32));
   Wo.line.visible = hl > 0; Wo.line.scale.x = Math.max((W + 200) * U * hl, 1e-3);
   Wo.word.letters.forEach((L, i) => {
@@ -187,16 +189,18 @@ onPrep3(() => {
   Cd.key = new THREE.SpotLight(lin('#ffffff'), 2.2, 50, 0.5, 0.6, 1.2); Cd.key.position.set(-5, 8, 12); s.add(Cd.key, Cd.key.target);
   Cd.clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 20);
   Cd.layers = [[-3, 0.4, 0], [-8, 0.28, 7], [-15, 0.18, 13]].map(([z, k, seed]) => {
-    const sc = (CAM_Z - z) / CAM_Z;
+    const sc = 1 + 0.45 * ((CAM_Z - z) / CAM_Z - 1); // only part-compensated, so deeper layers read smaller and finer
     const m = new THREE.Mesh(new THREE.PlaneGeometry(20.48 * sc, 11.52 * sc), new THREE.MeshBasicMaterial({ map: codeLayer(seed), transparent: true, depthWrite: false, color: hdr('#ffffff', 1.3 * k), clippingPlanes: [Cd.clip] }));
     m.position.z = z; s.add(m); return { m, z, sc, k };
   });
   Cd.faceMat = M3.chalkFace; Cd.brMat = [new THREE.MeshStandardMaterial({ color: lin(COL.butter), emissive: hdr(COL.butter, 1.4), roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: lin('#b8952e'), roughness: 0.5 })];
+  // each glyph hangs in a group pivoting at its cap-height centre, so it tumbles in place
   Cd.slots = [...'<CODE/>'].map((ch, i) => {
     const m = new THREE.Mesh(glyph3('mono', ch, 240 * U, 0.5, 0.03).geo, i === 0 || i >= 5 ? Cd.brMat : M3.chalk);
-    m.castShadow = true; s.add(m); return m;
+    m.castShadow = true; m.position.y = -(CD.cap * U) / 2;
+    const g = new THREE.Group(); g.add(m); s.add(g); return { g, m };
   });
-  Cd.hl = [1, 2, 3, 4].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(CD.adv * U, (CD.cap + 44) * U, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6), transparent: true })); s.add(m); return m; });
+  Cd.hl = [1, 2, 3, 4].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, (CD.cap + 44) * U, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6) })); m.visible = false; s.add(m); return m; });
   Cd.caret = new THREE.Mesh(new THREE.BoxGeometry(CD.adv * 0.42 * U, (CD.cap + 20) * U, 0.3), M3.glowButter); s.add(Cd.caret);
   Cd.blade = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.12), new THREE.MeshBasicMaterial({ color: hdr(COL.flamingo, 2.6) })); s.add(Cd.blade);
   Cd.bladeLight = new THREE.PointLight(lin(COL.flamingo), 0, 12, 2); s.add(Cd.bladeLight);
@@ -210,20 +214,24 @@ function updateCode(t) {
   Cd.clip.constant = lerp(-12, 12, Ez.outCubic(seg(t, CUE.code, 18.5)));
   Cd.layers.forEach(({ m, z, sc, k }, i) => {
     const fall = t > CUE.fall + 0.05 ? 0.5 * 42 * (t - CUE.fall - 0.05 - i * 0.12) ** 2 * (t - CUE.fall - 0.05 - i * 0.12 > 0) : 0;
-    m.position.set(0, (0.38 * (t - CUE.code) * sc) - fall * sc, z);
+    m.position.set([0, 0.7, -0.5][i], [0, 0.19, 0.11][i] + (0.38 * (t - CUE.code) * sc) - fall * sc, z);
     m.material.opacity = 1 - seg(t, CUE.fall + 0.3 + i * 0.1, CUE.fall + 0.8 + i * 0.1);
   });
+  Cd.hl.forEach(h => (h.visible = false));
   for (let i = 0; i < 7; i++) {
-    const m = Cd.slots[i], sl = codeSlot(i, t);
-    m.visible = !!sl;
+    const { g, m } = Cd.slots[i], sl = codeSlot(i, t);
+    g.visible = !!sl;
     if (!sl) continue;
     if (i >= 1 && i <= 4) m.geometry = glyph3('mono', sl.ch, 240 * U, 0.5, 0.03).geo;
     const d = Math.max(0, t - (CUE.fall + i * 0.06));
-    m.position.set(wx(CD.x + CD.adv * (i + 0.5) + sl.ox), wy(CD.y + sl.oy), 3.2 * d * d);
-    m.rotation.set(sl.rot * 0.8, sl.rot * 0.6, -sl.rot); m.scale.setScalar(sl.pop);
-    if (i >= 1 && i <= 4) {
-      const L = CUE.locks[i - 1], hl = t >= L && t < CUE.fall ? 1 - seg(t, L + 0.08, L + 0.4) : 0, h = Cd.hl[i - 1];
-      h.visible = hl > 0; h.material.opacity = hl; h.position.set(wx(CD.x + CD.adv * (i + 0.5)), wy(CD.y - CD.cap / 2), -0.4);
+    g.position.set(wx(CD.x + CD.adv * (i + 0.5) + sl.ox) + (rnd(i, 79) - 0.5) * 1.4 * d, wy(CD.y - CD.cap / 2 + sl.oy), 3.2 * d * d * (0.55 + 0.9 * rnd(i, 77)));
+    g.rotation.set(sl.rot * 0.8, sl.rot * 0.6, -sl.rot); g.scale.setScalar(sl.pop);
+    if (i >= 1 && i <= 4 && t < CUE.fall) { // selection highlight wipes off at full strength
+      const L = CUE.locks[i - 1] + 0.03, out = Ez.inOutCubic(seg(t, L + 0.05, L + 0.3)), h = Cd.hl[i - 1];
+      if (t >= L && out < 1) {
+        const w = CD.adv * U, x0 = wx(CD.x + CD.adv * i);
+        h.visible = true; h.scale.x = w * (1 - out); h.position.set(x0 + w * out + (w * (1 - out)) / 2, wy(CD.y - CD.cap / 2), -0.4);
+      }
     }
   }
   Cd.caret.visible = t > 18.4 && t < CUE.slash && (t % BEAT) < BEAT / 2;

@@ -238,21 +238,20 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
 <!-- 14 · RENDERING -->
 <section class="page">
   <div class="run"><span>We Make Motion* — Process</span><span>Rendering pipeline</span></div>
-  <h2>From source to master</h2>
+  <h2>From source to 4K master</h2>
   <div class="mono" style="display:grid; grid-template-columns:repeat(5, 1fr); gap:3mm; font-size:6.8pt; line-height:1.45; margin-bottom:7mm">
-    <div style="background:var(--ink); color:var(--chalk); padding:3mm; border-radius:1mm"><b>src/*.js</b><br>core, scenes, audio, player</div>
-    <div style="background:var(--ink); color:var(--chalk); padding:3mm; border-radius:1mm"><b>build.mjs</b><br>stitched into one index.html ({{LINES}} lines)</div>
-    <div style="background:var(--ultra); color:var(--chalk); padding:3mm; border-radius:1mm"><b>Headless Chromium ×3</b><br>fonts inlined, same page, same code</div>
-    <div style="background:var(--ultra); color:var(--chalk); padding:3mm; border-radius:1mm"><b>24 sub-frames / frame</b><br>float-summed → PNG; WAV from the offline audio context</div>
-    <div style="background:var(--flamingo); color:var(--ink); padding:3mm; border-radius:1mm"><b>ffmpeg</b><br>film grain, x264 CRF 18 High, AAC 256k, faststart</div>
+    <div style="background:var(--ink); color:var(--chalk); padding:3mm; border-radius:1mm"><b>src/*.js</b><br>core, scenes, audio, player → one index.html ({{LINES}} lines)</div>
+    <div style="background:var(--ink); color:var(--chalk); padding:3mm; border-radius:1mm"><b>Headless Chromium ×3</b><br>the same page, fonts inlined, canvas at 3840×2160</div>
+    <div style="background:var(--ultra); color:var(--chalk); padding:3mm; border-radius:1mm"><b>24 sub-frames / frame</b><br>summed in 32-bit float, one PNG per frame</div>
+    <div style="background:var(--ultra); color:var(--chalk); padding:3mm; border-radius:1mm"><b>1-second segments</b><br>each piped straight into its own ffmpeg; no frame files</div>
+    <div style="background:var(--flamingo); color:var(--ink); padding:3mm; border-radius:1mm"><b>Lossless concat</b><br>+ AAC soundtrack; 1080p is a Lanczos downscale of the 4K</div>
   </div>
   <div class="cols c2">
     <div>
       <h3>Real motion blur</h3>
-      <p class="small">A 180° shutter at 60 fps is open for 1/120 s. For every frame the renderer draws the scene at 24 evenly spaced instants inside that window and averages them in 32-bit float. Fast elements smear as a camera would record them, slow ones stay sharp, and static ones stay unblurred. That’s 43,200 full scene renders for 1,800 frames.</p>
-      <p class="small">In the browser, where there’s no budget for 24 renders a frame, the particle scene fakes blur with velocity streaks instead. The switch is one flag (<code>RO.streaks</code>).</p>
-      <h3 style="margin-top:4mm">Determinism is what makes it work</h3>
-      <p class="small">Three browser workers render interleaved frames (0, 3, 6… / 1, 4, 7… / 2, 5, 8…) completely independently, because no frame depends on the one before it. Fonts are embedded as data so every worker lays out identical glyphs.</p>
+      <p class="small">A 180° shutter at 60 fps is open for 1/120 s. For every frame the renderer draws the scene at 24 evenly spaced instants inside that window and averages them in 32-bit float. Fast elements smear as a camera would record them, slow ones stay sharp, and static ones stay unblurred. That is 43,200 full scene renders for 1,800 frames. In the browser, where there is no budget for that, the particle scene fakes blur with velocity streaks instead (<code>RO.streaks</code>).</p>
+      <h3 style="margin-top:4mm">Rendered, not upscaled</h3>
+      <p class="small">Everything is drawn in a 1920×1080 design space and scaled to the canvas, so the 4K master is the same code on a canvas twice the size. A 4K frame is about 15 MB of PNG, so frames never touch disk. Workers pull one-second segments from a queue and pipe them into per-segment encoders, and the segments are stitched without re-encoding. Any second can be re-rendered on its own, which is how QA fixes were patched in. At 4K one new flaw surfaced: hairline seams inside letters where the variable font’s contours overlap. Large glyphs are now also stroked in their own colour at about one device pixel, which closes them.</p>
     </div>
     <div>
       <h3>Numbers</h3>
@@ -260,12 +259,14 @@ y(t) = y0 + v0 * (t - t0) + g * (t - t0)² / <span class="n">2</span></pre>
         <tr><td>Frames · sub-frames</td><td class="m">{{FRAMES}} · {{SUBFRAMES}}</td></tr>
         <tr><td>Shutter</td><td class="m">180° (1/120 s), 24 samples</td></tr>
         <tr><td>Workers</td><td class="m">3 headless Chromium pages, 4 cores</td></tr>
-        <tr><td>Render wall-clock (frames)</td><td class="m">{{RENDERMIN}} min</td></tr>
-        <tr><td>Video</td><td class="m">H.264 High, CRF 18, yuv420p, grain-tuned</td></tr>
+        <tr><td>4K render wall-clock</td><td class="m">{{RENDER4KMIN}} min</td></tr>
+        <tr><td>4K video</td><td class="m">H.264 High 5.2, CRF 17, light grain</td></tr>
+        <tr><td>1080p video</td><td class="m">Lanczos downscale, CRF 18</td></tr>
         <tr><td>Audio</td><td class="m">48 kHz WAV → AAC 256 kb/s</td></tr>
-        <tr><td>Master size</td><td class="m">{{MP4MB}} MB</td></tr>
+        <tr><td>Masters</td><td class="m">4K {{MP44KMB}} MB · 1080p {{MP4MB}} MB</td></tr>
       </table>
-      <p class="small" style="margin-top:4mm">Resolution is not baked in. Everything is drawn in a 1920×1080 coordinate space and scaled to the canvas, so the same code renders 4K or 8K masters with no loss. The cost is render time, which scales with pixel count.</p>
+      <h3 style="margin-top:4mm">Determinism is what makes it work</h3>
+      <p class="small">No frame depends on the one before it, so any worker can render any second in any order, and a single second can be replaced later. Fonts are embedded as data so every worker lays out identical glyphs.</p>
     </div>
   </div>
   <div class="folio">14</div>

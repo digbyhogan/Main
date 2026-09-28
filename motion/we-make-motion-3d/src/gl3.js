@@ -38,7 +38,7 @@ function initGL(canvas) {
       vec2 p = vUv * vec2(1920., 1080.) / 70.; // frame-relative, so the torn edge looks the same at any resolution
       float k = m + (fbm(p + seed) - .5) * edgeNoise;
       float mm = smoothstep(.5 - edgeW, .5 + edgeW, k);
-      float e = exp(-pow((k - .5) / (edgeW * 2.2 + 1e-4), 2.));
+      float e = exp(-pow((k - .5) / (edgeW * 2.2 + 1e-4), 2.)) * smoothstep(0., .12, m * (1. - m)); // glow only where the matte is in transition
       gl_FragColor = vec4(mix(a, b, mm) + edgeGlow * e * (.45 + .9 * fbm(p * 2.7 - seed)), 1.);
     }`, { tA: { value: null }, tB: { value: null }, tM: { value: null }, useMatte: { value: 0 }, edgeW: { value: 0.04 },
     edgeNoise: { value: 0.5 }, seed: { value: 0 }, edgeGlow: { value: new THREE.Vector3() }, res: { value: new THREE.Vector2() } });

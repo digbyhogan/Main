@@ -133,6 +133,7 @@ function buildMaterials() {
   M3.paper = std('#e9e5dc', { roughness: 0.95, roughnessMap: TX.floor, bumpMap: TX.floor, bumpScale: 0.02 });
   M3.ultraWall = std('#2d2df5', { roughness: 0.85, roughnessMap: TX.floor, bumpMap: TX.floor, bumpScale: 0.03 });
   M3.glowPink = new THREE.MeshBasicMaterial({ color: hdr(COL.flamingo, 2.4) });
+  M3.glowPinkSoft = new THREE.MeshBasicMaterial({ color: hdr(COL.flamingo, 1.35) }); // on ultramarine: glows but stays pink
   M3.dotSolid = new THREE.MeshBasicMaterial({ color: hdr(COL.flamingo, 1.05) }); // for light grounds, where a white-hot core would vanish
   M3.glowChalk = new THREE.MeshBasicMaterial({ color: hdr(COL.chalk, 2.2) });
   M3.glowUltra = new THREE.MeshBasicMaterial({ color: hdr('#5a5aff', 3.5) });

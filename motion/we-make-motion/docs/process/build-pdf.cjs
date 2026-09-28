@@ -11,7 +11,18 @@ const DOC = __dirname, ROOT = path.resolve(DOC, '../..'), OUT = path.join(ROOT, 
 const IMG = path.join(DOC, 'img');
 const FFMPEG = process.env.FFMPEG || execFileSync('python3', ['-c', 'import imageio_ffmpeg as i; print(i.get_ffmpeg_exe())']).toString().trim();
 const ff = args => execFileSync(FFMPEG, ['-y', '-hide_banner', '-loglevel', 'error', ...args]);
-const frame = t => path.join(OUT, 'frames', `f${String(Math.round(t * 60)).padStart(5, '0')}.png`);
+// Every image of the finished film is pulled from the delivered master, so the document shows exactly what shipped.
+const grabbed = new Map();
+function fromVideo(video, t, tag) {
+  const key = `${tag}-${t.toFixed(3)}`;
+  if (grabbed.has(key)) return grabbed.get(key);
+  const dir = path.join(OUT, 'from-master'); fs.mkdirSync(dir, { recursive: true });
+  const f = path.join(dir, `${key}.png`);
+  ff(['-ss', t.toFixed(4), '-i', video, '-frames:v', '1', '-vf', 'scale=1920:-1:flags=lanczos', f]);
+  grabbed.set(key, f); return f;
+}
+const MASTER2 = path.join(ROOT, 'we-make-motion-4k.mp4');
+const frame = t => fromVideo(MASTER2, t + 0.5 / 60, '2d');
 const jpg = (src, dst, vf) => ff(['-i', src, '-vf', vf, '-q:v', '3', path.join(IMG, dst)]);
 const fmt = n => n.toLocaleString('en-US');
 
@@ -104,7 +115,7 @@ function spectroLabels() {
 }
 
 const OUT3 = path.join(ROOT, '..', 'we-make-motion-3d', 'render', 'out'), IMG3 = path.join(DOC, 'img3');
-const frame3 = t => path.join(OUT3, 'frames', `f${String(Math.round(t * 60)).padStart(5, '0')}.png`);
+const frame3 = t => fromVideo(path.join(ROOT, '..', 'we-make-motion-3d', 'we-make-motion-3d-4k.mp4'), t + 0.5 / 60, '3d');
 function images3() {
   fs.mkdirSync(IMG3, { recursive: true });
   for (const t of [4.4, 11.0, 13.2, 16.9, 23.2]) ff(['-i', frame3(t), '-vf', 'scale=1280:-1', '-q:v', '3', path.join(IMG3, `f-${t.toFixed(2)}.jpg`)]);
@@ -148,11 +159,14 @@ function images3() {
   })();
   const hits = cueHits(CUE), onGrid = hits.filter(h => Math.abs(h * 8 - Math.round(h * 8)) < 1e-6).length;
   const minus = v => String(v).replace('-', '−');
-  const log3 = fs.existsSync(path.join(OUT3, 'render3.log')) ? fs.readFileSync(path.join(OUT3, 'render3.log'), 'utf8') : '';
-  const secs3 = +((log3.match(/film → .* in (\d+) s/) || [])[1] || 0);
-  const mp43d = path.join(ROOT, '..', 'we-make-motion-3d', 'we-make-motion-3d.mp4');
+  // render times and sizes come from the 4K renderer's own logs and the delivered files
+  const minsIn = f => { try { return (fs.readFileSync(f, 'utf8').match(/film → .* in ([\d.]+) min/) || [])[1] || '?'; } catch { return '?'; } };
+  const mb = f => (fs.existsSync(f) ? (fs.statSync(f).size / 1e6).toFixed(1) : '?');
+  const E3 = path.join(ROOT, '..', 'we-make-motion-3d');
   const tokens = {
-    SUB3: '5,400', RENDER3MIN: (secs3 / 60).toFixed(0), MP43DMB: fs.existsSync(mp43d) ? (fs.statSync(mp43d).size / 1e6).toFixed(1) : '?',
+    SUB3: '5,400', RENDER3MIN: String(Math.round(+minsIn(path.join(E3, 'render', 'out-4k.log')) || 0)),
+    RENDER4KMIN: String(Math.round(+minsIn(path.join(ROOT, 'render', 'out-4k-full.log')) || 0)),
+    MP44KMB: mb(path.join(ROOT, 'we-make-motion-4k.mp4')), MP43DMB: mb(path.join(E3, 'we-make-motion-3d.mp4')), MP43D4KMB: mb(path.join(E3, 'we-make-motion-3d-4k.mp4')),
     LUFS: minus(r128.I), PEAK: minus(r128.P), LRA: r128.LRA, CUES: String(hits.length), ONGRID: String(onGrid),
     FRAMES: '1,800', SUBFRAMES: '43,200', LINES: fmt(lines), MP4MB: mp4.toFixed(1), RENDERMIN: (secs / 60).toFixed(0),
     PARTICLES: fmt(stats.particles), VOICES: fmt(stats.voices),
@@ -160,6 +174,9 @@ function images3() {
   };
   let html = ['p1.html', 'p2.html', 'p3.html', 'p4.html', 'p5.html'].map(f => fs.readFileSync(path.join(DOC, f), 'utf8')).join('\n');
   html = html.replace(/\{\{(\w+)\}\}/g, (m, k) => (k in tokens ? tokens[k] : m));
+  // number the folios from page order, so pages can be inserted freely
+  let pageNo = 0;
+  html = html.replace(/<section class="page[^"]*"[\s\S]*?<\/section>/g, sec => { pageNo++; return sec.replace(/<div class="folio">\d+<\/div>/, `<div class="folio">${String(pageNo).padStart(2, '0')}</div>`); });
   const left = html.match(/\{\{\w+\}\}/g);
   if (left) throw new Error('unfilled tokens: ' + left.join(', '));
   const combined = path.join(DOC, 'process.html');

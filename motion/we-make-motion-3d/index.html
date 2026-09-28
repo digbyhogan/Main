@@ -748,7 +748,10 @@ function surfDot(t) {
 function moLetter(i, t) {
   const gl = MO.lay.list[i], s = 10.25 + i * 0.125;
   const e = Ez.outQuart(seg(t, s, s + 1.1));
-  const x = lerp(W + 200 + i * 60, MO.x + gl.x + gl.w / 2, e);
+  // looser tracking while the letters ride and tilt, so neighbours never sweep into each other;
+  // it tightens to the word's real spacing as the wave flattens into the slam
+  const spread = lerp(1.22, 1, Ez.inOutCubic(seg(t, 11.65, 12.0)));
+  const x = lerp(W + 200 + i * 60, CX + (MO.x + gl.x + gl.w / 2 - CX) * spread, e);
   return { x, y: waveY(x, t) - 3, r: Math.atan(waveSlope(x, t)), gl };
 }
 
@@ -967,7 +970,9 @@ function codeBackground(g, t) {
     const fs = CUE.fall + 0.05 + rnd(j, 41) * 0.55;
     if (t > fs) { dy = 0.5 * 4200 * (t - fs) ** 2; a = 1 - seg(t, fs + 0.25, fs + 0.6); }
     if (a <= 0) continue;
-    g.globalAlpha = 0.3 * a;
+    const yy = y + dy, band = clamp((yy - 96) / 70) * clamp((H - 70 - yy) / 70); // keep the HUD corners clear
+    if (band <= 0) continue;
+    g.globalAlpha = 0.3 * a * band;
     const src = CD.lines[((j % CD.lines.length) + CD.lines.length) % CD.lines.length];
     g.fillStyle = COL.chalk; g.textAlign = 'right';
     g.fillText(String((j % CODE_SRC.length) + 1).padStart(2, '0'), 120, y + dy);
@@ -1011,16 +1016,12 @@ function sceneCode(g, t) {
     g.save();
     g.translate(cx + s.ox, cy + s.oy); g.rotate(s.rot); g.scale(s.pop, s.pop);
     let col = s.col;
-    if (i >= 1 && i <= 4) {
-      const L = CUE.locks[i - 1], hl = t >= L ? 1 - seg(t, L + 0.08, L + 0.4) : 0;
-      if (hl > 0 && t < CUE.fall) {
-        g.globalAlpha = hl; g.fillStyle = COL.butter;
-        g.fillRect(-CD.adv / 2, -CD.cap / 2 - 22, CD.adv, CD.cap + 44); g.globalAlpha = 1;
-        col = mixHex(COL.chalk, COL.ink, hl);
-      }
-      if (t < L) col = 'rgba(241,239,233,0.55)';
-    }
+    if (i >= 1 && i <= 4 && t < CUE.locks[i - 1]) col = 'rgba(241,239,233,0.55)';
     g.fillStyle = col; g.fillText(s.ch, 0, CD.cap / 2);
+    if (i >= 1 && i <= 4 && t < CUE.fall) {
+      selectionWipe(g, -CD.adv / 2, -CD.cap / 2 - 22, CD.adv, CD.cap + 44, t, CUE.locks[i - 1] + 0.03,
+        () => { g.fillStyle = COL.ink; g.fillText(s.ch, 0, CD.cap / 2); });
+    }
     g.restore();
   }
   // caret, blinking on the beat
@@ -1048,7 +1049,7 @@ function sceneCode(g, t) {
 
 // ═══ G · THE CLAIM (22 – 26s)  &  H · THE FINE PRINT (26 – 30s) ═══
 const FN = {};
-const FOOTNOTE = '*Except this one. This one is 2,859 lines of code.';
+const FOOTNOTE = '*Except this one. This one is 2,898 lines of code.';
 onPrep(() => {
   const L1 = F.disp(150), mw = textW(F.disp(100), 'MOTION');
   const ms = Math.min(310, (1620 / mw) * 100);
@@ -1065,14 +1066,36 @@ onPrep(() => {
   FN.dot = { x: words[4].x + words[4].lay.width + 34, y: 870 - 20, r: 20 };
   // single-line sentence layout
   const gap = 26, dotR = 9;
-  let total = words.reduce((a, w) => a + w.lay.width * w.s, 0) + gap * 4 + 12 + dotR * 2;
+  let total = words.reduce((a, w) => a + w.lay.width * w.s, 0) + gap * 4 + 34 + dotR * 2; // the asterisk's arms need room
   let x = CX - total / 2;
   for (const w of words) { w.tx = x; w.ty = 560; x += w.lay.width * w.s + gap; }
-  FN.dotTo = { x: x - gap + 12 + dotR, y: 560 - dotR, r: dotR };
+  FN.dotTo = { x: x - gap + 34 + dotR, y: 560 - dotR, r: dotR };
   FN.note = FOOTNOTE;
   FN.noteFont = F.mono(24);
   FN.noteW = textW(FN.noteFont, FN.note);
 });
+
+// Reflow in two moves so no word crosses another: each shrinks in place, then travels.
+function reflowOf(w, i, t) {
+  const a = Ez.inOutCubic(seg(t, CUE.reflow + i * 0.03, CUE.reflow + i * 0.03 + 0.35));
+  const b = Ez.inOutBack(seg(t, CUE.reflow + 0.3 + i * 0.04, CUE.reflow + 0.8 + i * 0.04), 1.2);
+  return { x: lerp(w.x, w.tx, b), y: lerp(w.y, w.ty, b) + Math.sin(Math.PI * clamp(b)) * 30 * (i % 2 ? 1 : -1), s: lerp(1, w.s, a), a, b };
+}
+// The full stop rides with CODE while it shrinks, then travels to its own place.
+function reflowDot(t) {
+  const w = FN.words[4], f = reflowOf(w, 4, t), s = lerp(1, w.s, f.a);
+  const x1 = w.x + (FN.dot.x - w.x) * s, y1 = w.y + (FN.dot.y - w.y) * s;
+  return { x: lerp(x1, FN.dotTo.x, f.b), y: lerp(y1, FN.dotTo.y, f.b), r: lerp(FN.dot.r * s, FN.dotTo.r, f.b) };
+}
+// A selection highlight that wipes away at full opacity: butter faded over ultramarine or ink
+// goes muddy, so instead the box shrinks off the letter and the ink copy is clipped to it.
+function selectionWipe(g, x, y, w, h, t, lock, drawInk) {
+  const out = Ez.inOutCubic(seg(t, lock + 0.05, lock + 0.3));
+  if (t < lock || out >= 1) return;
+  const bx = x + w * out, bw = w * (1 - out);
+  g.fillStyle = COL.butter; g.fillRect(bx, y, bw, h);
+  g.save(); g.beginPath(); g.rect(bx, y, bw, h); g.clip(); drawInk(); g.restore();
+}
 
 function finDot(t) {
   const b = CUE.finalBounces, rest = FN.dot.y;
@@ -1116,10 +1139,10 @@ function drawWordIn(g, w, i, t) {
     L.list.forEach((gl, k) => {
       const lock = t0 + k * 0.0625;
       if (t < t0 - 0.12 + k * 0.02) return;
-      const hl = t >= lock ? 1 - seg(t, lock + 0.05, lock + 0.35) : 0;
-      if (hl > 0) { g.globalAlpha = hl; g.fillStyle = COL.butter; g.fillRect(w.x + gl.x, w.y - L.asc - 14, gl.w, L.asc + 28); g.globalAlpha = 1; }
-      g.fillStyle = t < lock ? 'rgba(241,239,233,0.55)' : mixHex(COL.chalk, COL.ink, hl);
+      g.fillStyle = t < lock ? 'rgba(241,239,233,0.55)' : COL.chalk;
       g.fillText(t < lock ? scr(t, k + 20) : gl.ch, w.x + gl.x, w.y);
+      selectionWipe(g, w.x + gl.x, w.y - L.asc - 14, gl.w, L.asc + 28, t, lock,
+        () => { g.fillStyle = COL.ink; g.fillText(gl.ch, w.x + gl.x, w.y); });
     });
   }
 }
@@ -1136,18 +1159,15 @@ function sceneFinale(g, t) {
   } else {
     g.globalAlpha = out;
     FN.words.forEach((w, i) => {
-      const p = Ez.inOutBack(seg(t, CUE.reflow + i * 0.05, CUE.reflow + i * 0.05 + 0.7), 1.2);
-      const arc = Math.sin(Math.PI * clamp(p)) * 70 * (i % 2 ? 1 : -1);
-      const s = lerp(1, w.s, p);
-      g.save(); g.translate(lerp(w.x, w.tx, p), lerp(w.y, w.ty, p) + arc); g.scale(s, s);
+      const f = reflowOf(w, i, t);
+      g.save(); g.translate(f.x, f.y); g.scale(f.s, f.s);
       g.font = w.font; g.textAlign = 'left'; g.fillStyle = COL.chalk; g.fillText(w.str, 0, 0);
       g.restore();
     });
     g.globalAlpha = 1;
     // the full stop that becomes an asterisk
-    const p = Ez.inOutBack(seg(t, 26.25, 26.95), 1.2);
-    const up = -30 * Ez.outBack(seg(t, CUE.asterisk, 27.5), 2);
-    let x = lerp(FN.dot.x, FN.dotTo.x, p), y = lerp(FN.dot.y, FN.dotTo.y, p) + up, r = lerp(FN.dot.r, FN.dotTo.r, p);
+    const rd = reflowDot(t), up = -30 * Ez.outBack(seg(t, CUE.asterisk, 27.5), 2);
+    let x = rd.x, y = rd.y + up, r = rd.r;
     // bookend: it drifts home to centre and becomes the opening dot again
     const home = Ez.inOutCubic(seg(t, CUE.fadeOut + 0.2, CUE.fadeOut + 0.65));
     x = lerp(x, CX, home); y = lerp(y, CY, home); r = lerp(r, DOT_R, home);
@@ -1711,7 +1731,7 @@ function initGL(canvas) {
       vec2 p = vUv * vec2(1920., 1080.) / 70.; // frame-relative, so the torn edge looks the same at any resolution
       float k = m + (fbm(p + seed) - .5) * edgeNoise;
       float mm = smoothstep(.5 - edgeW, .5 + edgeW, k);
-      float e = exp(-pow((k - .5) / (edgeW * 2.2 + 1e-4), 2.));
+      float e = exp(-pow((k - .5) / (edgeW * 2.2 + 1e-4), 2.)) * smoothstep(0., .12, m * (1. - m)); // glow only where the matte is in transition
       gl_FragColor = vec4(mix(a, b, mm) + edgeGlow * e * (.45 + .9 * fbm(p * 2.7 - seed)), 1.);
     }`, { tA: { value: null }, tB: { value: null }, tM: { value: null }, useMatte: { value: 0 }, edgeW: { value: 0.04 },
     edgeNoise: { value: 0.5 }, seed: { value: 0 }, edgeGlow: { value: new THREE.Vector3() }, res: { value: new THREE.Vector2() } });
@@ -2009,6 +2029,7 @@ function buildMaterials() {
   M3.paper = std('#e9e5dc', { roughness: 0.95, roughnessMap: TX.floor, bumpMap: TX.floor, bumpScale: 0.02 });
   M3.ultraWall = std('#2d2df5', { roughness: 0.85, roughnessMap: TX.floor, bumpMap: TX.floor, bumpScale: 0.03 });
   M3.glowPink = new THREE.MeshBasicMaterial({ color: hdr(COL.flamingo, 2.4) });
+  M3.glowPinkSoft = new THREE.MeshBasicMaterial({ color: hdr(COL.flamingo, 1.35) }); // on ultramarine: glows but stays pink
   M3.dotSolid = new THREE.MeshBasicMaterial({ color: hdr(COL.flamingo, 1.05) }); // for light grounds, where a white-hot core would vanish
   M3.glowChalk = new THREE.MeshBasicMaterial({ color: hdr(COL.chalk, 2.2) });
   M3.glowUltra = new THREE.MeshBasicMaterial({ color: hdr('#5a5aff', 3.5) });
@@ -2095,7 +2116,7 @@ function updateDark(t) {
   const f = Ez.inOutCubic(seg(t, 2.0, 3.1));
   const R = lerp(lerp(16.5, 15.2, Ez.outCubic(seg(t, 0, 2))), lerp(CAM_Z * 0.93, CAM_Z * 0.86, seg(t, CUE.weLock, 6)), f);
   cam.position.set(Math.sin(a) * R, lerp(lerp(0.9, 0.55, seg(t, 0, 2)), 1.1, f), Math.cos(a) * R);
-  cam.fov = FOV; cam.lookAt(0, lerp(-0.35, 0.9, f), 0);
+  cam.fov = FOV; cam.lookAt(0, lerp(0.45, 0.9, f), 0); // high enough that the dot's hop stays in frame
   shake3(cam, t);
 
   D.key.intensity = lerp(0, 2.6, Ez.inOutSine(seg(t, 1.0, 4.0))) + 2.5 * pulse(t, CUE.weLock, 4);
@@ -2114,7 +2135,7 @@ function updateDark(t) {
     dy = lerp(wy(REST_Y), 0, e); D.dot.position.set(0, dy, 0); D.dot.scale.setScalar(r);
     D.dot.visible = t < CUE.split1;
   }
-  D.dotLight.position.set(dx, dy, 0.4); D.dotLight.intensity = t < CUE.burst ? 3.2 : 0;
+  D.dotLight.position.set(dx, dy, 0.4); D.dotLight.intensity = t < CUE.burst && (t >= 2 || D.dot.visible) ? 3.2 : 0; // no light before the dot exists
 
   // ripples and ground line
   const str = [1, 0.6, 0.35, 0.2, 0.1];
@@ -2179,7 +2200,7 @@ onPrep3(() => {
   const r = MK.sw / 2 * U;
   K.cyl = new THREE.CylinderGeometry(r, r, 1, 40, 1, true); K.ball = new THREE.SphereGeometry(r, 40, 24);
   K.pool = { cyl: [], ball: [] }; K.used = { cyl: 0, ball: 0 };
-  K.letterMat = M3.ink;
+  K.letterMat = M3.inkFace; // one material: spheres have no geometry groups, so an array would draw nothing
   // blueprint grid: emissive ultramarine hairlines on the wall
   K.grid = [];
   const gm = new THREE.MeshBasicMaterial({ color: hdr('#4a4aff', 1.6), transparent: true });
@@ -2241,7 +2262,7 @@ function updateMake(t) {
   const g = K.labCanvas.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
   g.fillStyle = '#fff'; g.font = F.mono(15); g.textAlign = 'left';
-  [['CAP 360', MK.top], ['MID 540', 540], ['BASE 720', MK.base]].forEach(([s, y], i) => g.fillText(typeSlice(s, t, 6.2 + i * 0.08, 30), 40, y - 10));
+  [['CAP 360', MK.top], ['MID 540', 540], ['BASE 720', MK.base]].forEach(([s, y], i) => g.fillText(typeSlice(s, t, 6.2 + i * 0.08, 30), 110, y - 10)); // inset: the camera drifts
   g.textAlign = 'right'; g.fillText(typeSlice('4 GLYPHS · 13 SEGMENTS · 1 DOT', t, 6.6, 40), 1721, 300);
   g.textAlign = 'left'; g.fillText(typeSlice('STROKE 76', t, 6.9, 30), 199, 800);
   K.lab.material.map.needsUpdate = true; K.lab.material.opacity = fade;
@@ -2263,9 +2284,10 @@ function updateMake(t) {
   K.bar.visible = mOn > 0; K.barCaps.forEach(c => (c.visible = mOn > 0));
   if (mOn > 0) {
     const x0 = lerp(1489, -600, ext), x1 = lerp(1489 + (1650 - 1489) * mOn, W + 600, ext), th = lerp(1, 0.08, seg(t, 9.4, 9.9));
-    K.bar.position.set(wx((x0 + x1) / 2), wy(540), 0); K.bar.scale.set(th, (x1 - x0) * U, th); K.bar.rotation.z = Math.PI / 2;
-    K.barCaps[0].position.set(wx(x0), wy(540), 0); K.barCaps[1].position.set(wx(x1), wy(540), 0); K.barCaps.forEach(c => c.scale.setScalar(th));
-    K.bar.material.emissive.copy(hdr(COL.chalk, 2.2)).multiplyScalar(seg(t, 9.3, 9.8));
+    const bz = 0.45 * Ez.inOutCubic(seg(t, CUE.lineOut, CUE.lineOut + 0.15)); // part of the E, then in front of the strokes as it becomes the horizon
+    K.bar.position.set(wx((x0 + x1) / 2), wy(540), bz); K.bar.scale.set(th, (x1 - x0) * U, th); K.bar.rotation.z = Math.PI / 2;
+    K.barCaps[0].position.set(wx(x0), wy(540), bz); K.barCaps[1].position.set(wx(x1), wy(540), bz); K.barCaps.forEach(c => c.scale.setScalar(th));
+    K.bar.material.emissive.copy(hdr(COL.chalk, 2.2)).multiplyScalar(seg(t, 9.55, 9.85)); // ink while thick, glowing once it thins
   }
   const dm = makeDot(t);
   K.dot.visible = !!dm;
@@ -2301,7 +2323,7 @@ onPrep3(() => {
   s.add(new THREE.HemisphereLight(lin('#ffffff'), lin('#1a1aa0'), 0.35));
   Mo.key = new THREE.DirectionalLight(lin('#ffffff'), 0.9); Mo.key.position.set(6, 8, 10); Mo.key.castShadow = true;
   Object.assign(Mo.key.shadow.camera, { left: -14, right: 14, top: 9, bottom: -9, near: 1, far: 40 }); Mo.key.shadow.mapSize.set(2048, 1024); s.add(Mo.key);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), M3.ultraWall); floor.rotation.x = -Math.PI / 2; floor.position.y = -4.2; floor.receiveShadow = true; s.add(floor);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), M3.ultraWall); floor.rotation.x = -Math.PI / 2; floor.position.y = -9.5; floor.receiveShadow = true; s.add(floor); // below the lowest marquee strip
   const back = new THREE.Mesh(new THREE.PlaneGeometry(160, 60), M3.ultraWall); back.position.z = -22; back.receiveShadow = true; s.add(back);
   Mo.all = new THREE.Group(); s.add(Mo.all);
   // the wave: a glowing ribbon whose vertices follow waveY()
@@ -2341,7 +2363,7 @@ function updateMotion(t) {
   cam.fov = fov; cam.position.set(0, lerp(0, 0.4, b), dist); cam.lookAt(0, 0, 0); cam.rotation.z = -0.09 * b * (1 - col);
   shake3(cam, t);
   Mo.all.scale.set(1, 1 - 0.985 * col, 1);
-  Mo.key.intensity = 0.9 + 1.5 * pulse(t, CUE.slam, 6);
+  Mo.key.intensity = 0.9 + 0.4 * pulse(t, CUE.slam, 6);
 
   // ribbon
   const pos = Mo.ribbon.geometry.attributes.position, N = pos.count / 2;
@@ -2429,10 +2451,12 @@ onPrep3(() => {
 function updateWithout(t) {
   const Wo = S3.without, cam = Wo.cam;
   // the flight: drift, then accelerate through the counter of the o
-  const pp = Ez.inCubic(seg(t, CUE.portal, 18.0)), drift = seg(t, 16.3, CUE.portal);
-  const target = Wo.hole;
-  cam.position.set(lerp(lerp(0.3, -0.2, drift), target.x, pp), lerp(0, target.y, pp), lerp(lerp(CAM_Z, CAM_Z * 0.95, drift), target.z - 2.5, pp));
-  cam.fov = FOV; cam.lookAt(lerp(0, target.x, Ez.inOutCubic(seg(t, CUE.portal, 17.8))), lerp(0, target.y, Ez.inOutCubic(seg(t, CUE.portal, 17.8))), -8 * pp);
+  const pp = seg(t, CUE.portal, 18.0), drift = seg(t, 16.3, CUE.portal), target = Wo.hole;
+  // exponential approach: the o's counter grows at a steady rate and fills the frame on the cut
+  const d0 = lerp(CAM_Z, CAM_Z * 0.95, drift) - target.z, dist = d0 * Math.pow(0.3 / d0, Ez.inSine(pp));
+  const aim = Ez.inOutCubic(seg(t, CUE.portal, 17.7));
+  cam.position.set(lerp(lerp(0.3, -0.2, drift), target.x, aim), lerp(0, target.y, aim), target.z + dist);
+  cam.fov = FOV; cam.lookAt(lerp(0, target.x, aim), lerp(0, target.y, aim), target.z - 5);
   const hl = 1 - Ez.inOutExpo(seg(t, 16.0, 16.32));
   Wo.line.visible = hl > 0; Wo.line.scale.x = Math.max((W + 200) * U * hl, 1e-3);
   Wo.word.letters.forEach((L, i) => {
@@ -2469,16 +2493,18 @@ onPrep3(() => {
   Cd.key = new THREE.SpotLight(lin('#ffffff'), 2.2, 50, 0.5, 0.6, 1.2); Cd.key.position.set(-5, 8, 12); s.add(Cd.key, Cd.key.target);
   Cd.clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 20);
   Cd.layers = [[-3, 0.4, 0], [-8, 0.28, 7], [-15, 0.18, 13]].map(([z, k, seed]) => {
-    const sc = (CAM_Z - z) / CAM_Z;
+    const sc = 1 + 0.45 * ((CAM_Z - z) / CAM_Z - 1); // only part-compensated, so deeper layers read smaller and finer
     const m = new THREE.Mesh(new THREE.PlaneGeometry(20.48 * sc, 11.52 * sc), new THREE.MeshBasicMaterial({ map: codeLayer(seed), transparent: true, depthWrite: false, color: hdr('#ffffff', 1.3 * k), clippingPlanes: [Cd.clip] }));
     m.position.z = z; s.add(m); return { m, z, sc, k };
   });
   Cd.faceMat = M3.chalkFace; Cd.brMat = [new THREE.MeshStandardMaterial({ color: lin(COL.butter), emissive: hdr(COL.butter, 1.4), roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: lin('#b8952e'), roughness: 0.5 })];
+  // each glyph hangs in a group pivoting at its cap-height centre, so it tumbles in place
   Cd.slots = [...'<CODE/>'].map((ch, i) => {
     const m = new THREE.Mesh(glyph3('mono', ch, 240 * U, 0.5, 0.03).geo, i === 0 || i >= 5 ? Cd.brMat : M3.chalk);
-    m.castShadow = true; s.add(m); return m;
+    m.castShadow = true; m.position.y = -(CD.cap * U) / 2;
+    const g = new THREE.Group(); g.add(m); s.add(g); return { g, m };
   });
-  Cd.hl = [1, 2, 3, 4].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(CD.adv * U, (CD.cap + 44) * U, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6), transparent: true })); s.add(m); return m; });
+  Cd.hl = [1, 2, 3, 4].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, (CD.cap + 44) * U, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6) })); m.visible = false; s.add(m); return m; });
   Cd.caret = new THREE.Mesh(new THREE.BoxGeometry(CD.adv * 0.42 * U, (CD.cap + 20) * U, 0.3), M3.glowButter); s.add(Cd.caret);
   Cd.blade = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.12), new THREE.MeshBasicMaterial({ color: hdr(COL.flamingo, 2.6) })); s.add(Cd.blade);
   Cd.bladeLight = new THREE.PointLight(lin(COL.flamingo), 0, 12, 2); s.add(Cd.bladeLight);
@@ -2492,20 +2518,24 @@ function updateCode(t) {
   Cd.clip.constant = lerp(-12, 12, Ez.outCubic(seg(t, CUE.code, 18.5)));
   Cd.layers.forEach(({ m, z, sc, k }, i) => {
     const fall = t > CUE.fall + 0.05 ? 0.5 * 42 * (t - CUE.fall - 0.05 - i * 0.12) ** 2 * (t - CUE.fall - 0.05 - i * 0.12 > 0) : 0;
-    m.position.set(0, (0.38 * (t - CUE.code) * sc) - fall * sc, z);
+    m.position.set([0, 0.7, -0.5][i], [0, 0.19, 0.11][i] + (0.38 * (t - CUE.code) * sc) - fall * sc, z);
     m.material.opacity = 1 - seg(t, CUE.fall + 0.3 + i * 0.1, CUE.fall + 0.8 + i * 0.1);
   });
+  Cd.hl.forEach(h => (h.visible = false));
   for (let i = 0; i < 7; i++) {
-    const m = Cd.slots[i], sl = codeSlot(i, t);
-    m.visible = !!sl;
+    const { g, m } = Cd.slots[i], sl = codeSlot(i, t);
+    g.visible = !!sl;
     if (!sl) continue;
     if (i >= 1 && i <= 4) m.geometry = glyph3('mono', sl.ch, 240 * U, 0.5, 0.03).geo;
     const d = Math.max(0, t - (CUE.fall + i * 0.06));
-    m.position.set(wx(CD.x + CD.adv * (i + 0.5) + sl.ox), wy(CD.y + sl.oy), 3.2 * d * d);
-    m.rotation.set(sl.rot * 0.8, sl.rot * 0.6, -sl.rot); m.scale.setScalar(sl.pop);
-    if (i >= 1 && i <= 4) {
-      const L = CUE.locks[i - 1], hl = t >= L && t < CUE.fall ? 1 - seg(t, L + 0.08, L + 0.4) : 0, h = Cd.hl[i - 1];
-      h.visible = hl > 0; h.material.opacity = hl; h.position.set(wx(CD.x + CD.adv * (i + 0.5)), wy(CD.y - CD.cap / 2), -0.4);
+    g.position.set(wx(CD.x + CD.adv * (i + 0.5) + sl.ox) + (rnd(i, 79) - 0.5) * 1.4 * d, wy(CD.y - CD.cap / 2 + sl.oy), 3.2 * d * d * (0.55 + 0.9 * rnd(i, 77)));
+    g.rotation.set(sl.rot * 0.8, sl.rot * 0.6, -sl.rot); g.scale.setScalar(sl.pop);
+    if (i >= 1 && i <= 4 && t < CUE.fall) { // selection highlight wipes off at full strength
+      const L = CUE.locks[i - 1] + 0.03, out = Ez.inOutCubic(seg(t, L + 0.05, L + 0.3)), h = Cd.hl[i - 1];
+      if (t >= L && out < 1) {
+        const w = CD.adv * U, x0 = wx(CD.x + CD.adv * i);
+        h.visible = true; h.scale.x = w * (1 - out); h.position.set(x0 + w * out + (w * (1 - out)) / 2, wy(CD.y - CD.cap / 2), -0.4);
+      }
     }
   }
   Cd.caret.visible = t > 18.4 && t < CUE.slash && (t % BEAT) < BEAT / 2;
@@ -2539,13 +2569,13 @@ onPrep3(() => {
   const fk = ['disp', 'disp', 'disp', 'serif', 'mono'], depth = [0.5, 0.5, 0.8, 0.3, 0.5];
   Cl.words = FN.words.map((w, i) => {
     const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-    const mats = M3.chalk.map(m => { const c = m.clone(); c.clippingPlanes = [plane]; c.transparent = i === 3; return c; });
+    const mats = M3.chalk.map(m => { const c = m.clone(); c.clippingPlanes = [plane]; c.clipShadows = true; c.transparent = true; return c; });
     const w3 = word3(fk[i], w.str, w.size * U, depth[i], mats, { bevel: i === 3 ? 0.012 : 0.035 });
     w3.group.position.set(wx(w.x), wy(w.y), 0); s.add(w3.group);
     return { w, w3, plane, mats };
   });
-  Cl.hl = [0, 1, 2, 3].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6), transparent: true })); s.add(m); return m; });
-  Cl.dot = dotMesh(1); s.add(Cl.dot);
+  Cl.hl = [0, 1, 2, 3].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6) })); m.visible = false; s.add(m); return m; });
+  Cl.dot = dotMesh(1, M3.glowPinkSoft); s.add(Cl.dot);
   Cl.dotLight = new THREE.PointLight(lin(COL.flamingo), 0, 9, 2); s.add(Cl.dotLight);
   const r = 1, cyl = new THREE.CylinderGeometry(r, r, 1, 24, 1, true), ball = new THREE.SphereGeometry(r, 24, 16);
   Cl.arms = [0, 1, 2, 3, 4, 5].map(() => { const c = new THREE.Mesh(cyl, M3.glowPink), b = new THREE.Mesh(ball, M3.glowPink); s.add(c, b); return { c, b }; });
@@ -2566,7 +2596,8 @@ function updateClaim(t, inkMode) {
 
   Cl.words.forEach(({ w, w3, plane, mats }, i) => {
     const t0 = CUE.final[i];
-    w3.group.visible = t >= t0 - 0.15 && out > 0;
+    w3.group.visible = t >= t0 - 0.15 && out > 0.001;
+    if (i !== 3) mats.forEach(m => (m.opacity = out)); // the whole line fades together
     plane.constant = 1e3; // no clip unless a reveal needs it
     w3.letters.forEach((L, k) => { L.mesh.position.set(L.x + L.w / 2, 0, 0); L.mesh.scale.set(1, 1, 1); L.mesh.rotation.set(0, 0, 0); L.mesh.visible = true; });
     if (t < CUE.reflow) {
@@ -2584,16 +2615,15 @@ function updateClaim(t, inkMode) {
           const lock = t0 + k * 0.0625;
           L.mesh.visible = t >= t0 - 0.12 + k * 0.02;
           L.mesh.geometry = glyph3('mono', t < lock ? scr(t, k + 20) : L.ch, w.size * U, 0.5, 0.035).geo;
-          const hl = t >= lock ? 1 - seg(t, lock + 0.05, lock + 0.35) : 0, h = Cl.hl[k];
-          h.visible = hl > 0; h.material.opacity = hl;
-          h.scale.set(L.w, (w.lay.asc + 28) * U, 1); h.position.set(wx(w.x) + L.x + L.w / 2, wy(w.y) + (w.lay.asc / 2) * U, -0.35);
+          const out2 = Ez.inOutCubic(seg(t, lock + 0.05, lock + 0.3)), h = Cl.hl[k]; // wipes off at full strength
+          h.visible = t >= lock && out2 < 1;
+          h.scale.set(L.w * (1 - out2), (w.lay.asc + 28) * U, 1); h.position.set(wx(w.x) + L.x + L.w * out2 + (L.w * (1 - out2)) / 2, wy(w.y) + (w.lay.asc / 2) * U, -0.35);
         });
       }
-    } else { // FLIP reflow into one line
-      const p = Ez.inOutBack(seg(t, CUE.reflow + i * 0.05, CUE.reflow + i * 0.05 + 0.7), 1.2);
-      const arc = Math.sin(Math.PI * clamp(p)) * 70 * (i % 2 ? 1 : -1);
-      w3.group.position.set(wx(lerp(w.x, w.tx, p)), wy(lerp(w.y, w.ty, p) + arc), 0);
-      w3.group.scale.setScalar(lerp(1, w.s, p));
+    } else { // FLIP reflow into one line: shrink in place, then travel
+      const f = reflowOf(w, i, t);
+      w3.group.position.set(wx(f.x), wy(f.y), 0);
+      w3.group.scale.setScalar(f.s);
       if (i === 3) mats.forEach(m => (m.opacity = out));
       if (i === 4) w3.letters.forEach(L => (L.mesh.geometry = glyph3('mono', L.ch, w.size * U, 0.5, 0.035).geo));
       Cl.hl.forEach(h => (h.visible = false));
@@ -2604,13 +2634,14 @@ function updateClaim(t, inkMode) {
   let x, y, r, vis = true;
   if (t < CUE.reflow) { const f = finDot(t); vis = !!f; if (f) { x = f.x; y = f.y; r = f.r; Cl.dot.scale.set(f.sx * r * U, f.sy * r * U, f.sx * r * U); } }
   else {
-    const p = Ez.inOutBack(seg(t, 26.25, 26.95), 1.2), up = -30 * Ez.outBack(seg(t, CUE.asterisk, 27.5), 2);
-    x = lerp(FN.dot.x, FN.dotTo.x, p); y = lerp(FN.dot.y, FN.dotTo.y, p) + up; r = lerp(FN.dot.r, FN.dotTo.r, p);
+    const rd = reflowDot(t), up = -30 * Ez.outBack(seg(t, CUE.asterisk, 27.5), 2);
+    x = rd.x; y = rd.y + up; r = rd.r;
     const home = Ez.inOutCubic(seg(t, CUE.fadeOut + 0.2, CUE.fadeOut + 0.65));
     x = lerp(x, CX, home); y = lerp(y, CY, home); r = lerp(r, DOT_R, home);
   }
   const popOut = Ez.inBack(seg(t, 29.7, 29.85), 2.5), retract = 1 - Ez.inBack(seg(t, CUE.fadeOut + 0.45, CUE.fadeOut + 0.65));
   Cl.dot.visible = vis && popOut < 1; Cl.dotLight.intensity = Cl.dot.visible ? 3 : 0;
+  Cl.dot.material = inkMode ? M3.glowPink : M3.glowPinkSoft; // pink on ultramarine, glowing on ink
   if (vis) {
     const core = t >= CUE.reflow ? r * (1 - popOut) * lerp(1, 0.62, seg(t, CUE.asterisk, 27.4) * retract) : null;
     Cl.dot.position.set(wx(x), wy(y), 0.1); if (core !== null) Cl.dot.scale.setScalar(Math.max(core, 1e-3) * U);
@@ -2663,7 +2694,7 @@ function shot(t) {
   if (t < 16) {
     updateMotion(t);
     const b = seg(t, CUE.build, CUE.collapse);
-    return Object.assign(base, { a: view(S3.motion), bloom: 0.55 + 0.6 * b + 0.9 * pulse(t, CUE.slam, 6) + 1.5 * seg(t, 15.8, 16), exposure: 1 + 0.35 * pulse(t, CUE.slam, 8), ca: 0.0022 + 0.006 * b });
+    return Object.assign(base, { a: view(S3.motion), bloom: 0.55 + 0.6 * b + 0.3 * pulse(t, CUE.slam, 6) + 1.5 * seg(t, 15.8, 16), exposure: 1 + 0.08 * pulse(t, CUE.slam, 8), ca: 0.0022 + 0.006 * b });
   }
   if (t < CUE.portal) { updateWithout(t); return Object.assign(base, { a: view(S3.without), bloom: 0.4, dust: 0.3, vig: 0.28, lift: 0 }); }
   if (t < 18) {
@@ -2689,7 +2720,15 @@ function shot(t) {
 function hud3(t) {
   const c = G3.hudCanvas, g = c.getContext('2d'), s = c.width / W;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height);
-  g.setTransform(s, 0, 0, s, 0, 0); hud(g, t);
+  g.setTransform(s, 0, 0, s, 0, 0);
+  // in CODE the source layers run under the HUD corners: lay a soft ink scrim behind the text
+  const sa = seg(t, 18.3, 18.55) * (1 - seg(t, 21.4, 21.6));
+  if (sa > 0) for (const [y0, y1] of [[0, 130], [H, H - 120]]) {
+    const gr = g.createLinearGradient(0, y0, 0, y1);
+    gr.addColorStop(0, `rgba(17,17,22,${0.88 * sa})`); gr.addColorStop(1, 'rgba(17,17,22,0)');
+    g.fillStyle = gr; g.fillRect(0, Math.min(y0, y1), W, Math.abs(y1 - y0));
+  }
+  hud(g, t);
   G3.hudTex.needsUpdate = true;
 }
 function renderFrame3(t, samples = 1, shutter = 0.5) {

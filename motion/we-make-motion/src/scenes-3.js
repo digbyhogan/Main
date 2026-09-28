@@ -61,7 +61,9 @@ function codeBackground(g, t) {
     const fs = CUE.fall + 0.05 + rnd(j, 41) * 0.55;
     if (t > fs) { dy = 0.5 * 4200 * (t - fs) ** 2; a = 1 - seg(t, fs + 0.25, fs + 0.6); }
     if (a <= 0) continue;
-    g.globalAlpha = 0.3 * a;
+    const yy = y + dy, band = clamp((yy - 96) / 70) * clamp((H - 70 - yy) / 70); // keep the HUD corners clear
+    if (band <= 0) continue;
+    g.globalAlpha = 0.3 * a * band;
     const src = CD.lines[((j % CD.lines.length) + CD.lines.length) % CD.lines.length];
     g.fillStyle = COL.chalk; g.textAlign = 'right';
     g.fillText(String((j % CODE_SRC.length) + 1).padStart(2, '0'), 120, y + dy);
@@ -105,16 +107,12 @@ function sceneCode(g, t) {
     g.save();
     g.translate(cx + s.ox, cy + s.oy); g.rotate(s.rot); g.scale(s.pop, s.pop);
     let col = s.col;
-    if (i >= 1 && i <= 4) {
-      const L = CUE.locks[i - 1], hl = t >= L ? 1 - seg(t, L + 0.08, L + 0.4) : 0;
-      if (hl > 0 && t < CUE.fall) {
-        g.globalAlpha = hl; g.fillStyle = COL.butter;
-        g.fillRect(-CD.adv / 2, -CD.cap / 2 - 22, CD.adv, CD.cap + 44); g.globalAlpha = 1;
-        col = mixHex(COL.chalk, COL.ink, hl);
-      }
-      if (t < L) col = 'rgba(241,239,233,0.55)';
-    }
+    if (i >= 1 && i <= 4 && t < CUE.locks[i - 1]) col = 'rgba(241,239,233,0.55)';
     g.fillStyle = col; g.fillText(s.ch, 0, CD.cap / 2);
+    if (i >= 1 && i <= 4 && t < CUE.fall) {
+      selectionWipe(g, -CD.adv / 2, -CD.cap / 2 - 22, CD.adv, CD.cap + 44, t, CUE.locks[i - 1] + 0.03,
+        () => { g.fillStyle = COL.ink; g.fillText(s.ch, 0, CD.cap / 2); });
+    }
     g.restore();
   }
   // caret, blinking on the beat
@@ -159,14 +157,36 @@ onPrep(() => {
   FN.dot = { x: words[4].x + words[4].lay.width + 34, y: 870 - 20, r: 20 };
   // single-line sentence layout
   const gap = 26, dotR = 9;
-  let total = words.reduce((a, w) => a + w.lay.width * w.s, 0) + gap * 4 + 12 + dotR * 2;
+  let total = words.reduce((a, w) => a + w.lay.width * w.s, 0) + gap * 4 + 34 + dotR * 2; // the asterisk's arms need room
   let x = CX - total / 2;
   for (const w of words) { w.tx = x; w.ty = 560; x += w.lay.width * w.s + gap; }
-  FN.dotTo = { x: x - gap + 12 + dotR, y: 560 - dotR, r: dotR };
+  FN.dotTo = { x: x - gap + 34 + dotR, y: 560 - dotR, r: dotR };
   FN.note = FOOTNOTE;
   FN.noteFont = F.mono(24);
   FN.noteW = textW(FN.noteFont, FN.note);
 });
+
+// Reflow in two moves so no word crosses another: each shrinks in place, then travels.
+function reflowOf(w, i, t) {
+  const a = Ez.inOutCubic(seg(t, CUE.reflow + i * 0.03, CUE.reflow + i * 0.03 + 0.35));
+  const b = Ez.inOutBack(seg(t, CUE.reflow + 0.3 + i * 0.04, CUE.reflow + 0.8 + i * 0.04), 1.2);
+  return { x: lerp(w.x, w.tx, b), y: lerp(w.y, w.ty, b) + Math.sin(Math.PI * clamp(b)) * 30 * (i % 2 ? 1 : -1), s: lerp(1, w.s, a), a, b };
+}
+// The full stop rides with CODE while it shrinks, then travels to its own place.
+function reflowDot(t) {
+  const w = FN.words[4], f = reflowOf(w, 4, t), s = lerp(1, w.s, f.a);
+  const x1 = w.x + (FN.dot.x - w.x) * s, y1 = w.y + (FN.dot.y - w.y) * s;
+  return { x: lerp(x1, FN.dotTo.x, f.b), y: lerp(y1, FN.dotTo.y, f.b), r: lerp(FN.dot.r * s, FN.dotTo.r, f.b) };
+}
+// A selection highlight that wipes away at full opacity: butter faded over ultramarine or ink
+// goes muddy, so instead the box shrinks off the letter and the ink copy is clipped to it.
+function selectionWipe(g, x, y, w, h, t, lock, drawInk) {
+  const out = Ez.inOutCubic(seg(t, lock + 0.05, lock + 0.3));
+  if (t < lock || out >= 1) return;
+  const bx = x + w * out, bw = w * (1 - out);
+  g.fillStyle = COL.butter; g.fillRect(bx, y, bw, h);
+  g.save(); g.beginPath(); g.rect(bx, y, bw, h); g.clip(); drawInk(); g.restore();
+}
 
 function finDot(t) {
   const b = CUE.finalBounces, rest = FN.dot.y;
@@ -210,10 +230,10 @@ function drawWordIn(g, w, i, t) {
     L.list.forEach((gl, k) => {
       const lock = t0 + k * 0.0625;
       if (t < t0 - 0.12 + k * 0.02) return;
-      const hl = t >= lock ? 1 - seg(t, lock + 0.05, lock + 0.35) : 0;
-      if (hl > 0) { g.globalAlpha = hl; g.fillStyle = COL.butter; g.fillRect(w.x + gl.x, w.y - L.asc - 14, gl.w, L.asc + 28); g.globalAlpha = 1; }
-      g.fillStyle = t < lock ? 'rgba(241,239,233,0.55)' : mixHex(COL.chalk, COL.ink, hl);
+      g.fillStyle = t < lock ? 'rgba(241,239,233,0.55)' : COL.chalk;
       g.fillText(t < lock ? scr(t, k + 20) : gl.ch, w.x + gl.x, w.y);
+      selectionWipe(g, w.x + gl.x, w.y - L.asc - 14, gl.w, L.asc + 28, t, lock,
+        () => { g.fillStyle = COL.ink; g.fillText(gl.ch, w.x + gl.x, w.y); });
     });
   }
 }
@@ -230,18 +250,15 @@ function sceneFinale(g, t) {
   } else {
     g.globalAlpha = out;
     FN.words.forEach((w, i) => {
-      const p = Ez.inOutBack(seg(t, CUE.reflow + i * 0.05, CUE.reflow + i * 0.05 + 0.7), 1.2);
-      const arc = Math.sin(Math.PI * clamp(p)) * 70 * (i % 2 ? 1 : -1);
-      const s = lerp(1, w.s, p);
-      g.save(); g.translate(lerp(w.x, w.tx, p), lerp(w.y, w.ty, p) + arc); g.scale(s, s);
+      const f = reflowOf(w, i, t);
+      g.save(); g.translate(f.x, f.y); g.scale(f.s, f.s);
       g.font = w.font; g.textAlign = 'left'; g.fillStyle = COL.chalk; g.fillText(w.str, 0, 0);
       g.restore();
     });
     g.globalAlpha = 1;
     // the full stop that becomes an asterisk
-    const p = Ez.inOutBack(seg(t, 26.25, 26.95), 1.2);
-    const up = -30 * Ez.outBack(seg(t, CUE.asterisk, 27.5), 2);
-    let x = lerp(FN.dot.x, FN.dotTo.x, p), y = lerp(FN.dot.y, FN.dotTo.y, p) + up, r = lerp(FN.dot.r, FN.dotTo.r, p);
+    const rd = reflowDot(t), up = -30 * Ez.outBack(seg(t, CUE.asterisk, 27.5), 2);
+    let x = rd.x, y = rd.y + up, r = rd.r;
     // bookend: it drifts home to centre and becomes the opening dot again
     const home = Ez.inOutCubic(seg(t, CUE.fadeOut + 0.2, CUE.fadeOut + 0.65));
     x = lerp(x, CX, home); y = lerp(y, CY, home); r = lerp(r, DOT_R, home);

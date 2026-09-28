@@ -55,7 +55,7 @@ function updateDark(t) {
   const f = Ez.inOutCubic(seg(t, 2.0, 3.1));
   const R = lerp(lerp(16.5, 15.2, Ez.outCubic(seg(t, 0, 2))), lerp(CAM_Z * 0.93, CAM_Z * 0.86, seg(t, CUE.weLock, 6)), f);
   cam.position.set(Math.sin(a) * R, lerp(lerp(0.9, 0.55, seg(t, 0, 2)), 1.1, f), Math.cos(a) * R);
-  cam.fov = FOV; cam.lookAt(0, lerp(-0.35, 0.9, f), 0);
+  cam.fov = FOV; cam.lookAt(0, lerp(0.45, 0.9, f), 0); // high enough that the dot's hop stays in frame
   shake3(cam, t);
 
   D.key.intensity = lerp(0, 2.6, Ez.inOutSine(seg(t, 1.0, 4.0))) + 2.5 * pulse(t, CUE.weLock, 4);
@@ -74,7 +74,7 @@ function updateDark(t) {
     dy = lerp(wy(REST_Y), 0, e); D.dot.position.set(0, dy, 0); D.dot.scale.setScalar(r);
     D.dot.visible = t < CUE.split1;
   }
-  D.dotLight.position.set(dx, dy, 0.4); D.dotLight.intensity = t < CUE.burst ? 3.2 : 0;
+  D.dotLight.position.set(dx, dy, 0.4); D.dotLight.intensity = t < CUE.burst && (t >= 2 || D.dot.visible) ? 3.2 : 0; // no light before the dot exists
 
   // ripples and ground line
   const str = [1, 0.6, 0.35, 0.2, 0.1];
@@ -139,7 +139,7 @@ onPrep3(() => {
   const r = MK.sw / 2 * U;
   K.cyl = new THREE.CylinderGeometry(r, r, 1, 40, 1, true); K.ball = new THREE.SphereGeometry(r, 40, 24);
   K.pool = { cyl: [], ball: [] }; K.used = { cyl: 0, ball: 0 };
-  K.letterMat = M3.ink;
+  K.letterMat = M3.inkFace; // one material: spheres have no geometry groups, so an array would draw nothing
   // blueprint grid: emissive ultramarine hairlines on the wall
   K.grid = [];
   const gm = new THREE.MeshBasicMaterial({ color: hdr('#4a4aff', 1.6), transparent: true });
@@ -201,7 +201,7 @@ function updateMake(t) {
   const g = K.labCanvas.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
   g.fillStyle = '#fff'; g.font = F.mono(15); g.textAlign = 'left';
-  [['CAP 360', MK.top], ['MID 540', 540], ['BASE 720', MK.base]].forEach(([s, y], i) => g.fillText(typeSlice(s, t, 6.2 + i * 0.08, 30), 40, y - 10));
+  [['CAP 360', MK.top], ['MID 540', 540], ['BASE 720', MK.base]].forEach(([s, y], i) => g.fillText(typeSlice(s, t, 6.2 + i * 0.08, 30), 110, y - 10)); // inset: the camera drifts
   g.textAlign = 'right'; g.fillText(typeSlice('4 GLYPHS · 13 SEGMENTS · 1 DOT', t, 6.6, 40), 1721, 300);
   g.textAlign = 'left'; g.fillText(typeSlice('STROKE 76', t, 6.9, 30), 199, 800);
   K.lab.material.map.needsUpdate = true; K.lab.material.opacity = fade;
@@ -223,9 +223,10 @@ function updateMake(t) {
   K.bar.visible = mOn > 0; K.barCaps.forEach(c => (c.visible = mOn > 0));
   if (mOn > 0) {
     const x0 = lerp(1489, -600, ext), x1 = lerp(1489 + (1650 - 1489) * mOn, W + 600, ext), th = lerp(1, 0.08, seg(t, 9.4, 9.9));
-    K.bar.position.set(wx((x0 + x1) / 2), wy(540), 0); K.bar.scale.set(th, (x1 - x0) * U, th); K.bar.rotation.z = Math.PI / 2;
-    K.barCaps[0].position.set(wx(x0), wy(540), 0); K.barCaps[1].position.set(wx(x1), wy(540), 0); K.barCaps.forEach(c => c.scale.setScalar(th));
-    K.bar.material.emissive.copy(hdr(COL.chalk, 2.2)).multiplyScalar(seg(t, 9.3, 9.8));
+    const bz = 0.45 * Ez.inOutCubic(seg(t, CUE.lineOut, CUE.lineOut + 0.15)); // part of the E, then in front of the strokes as it becomes the horizon
+    K.bar.position.set(wx((x0 + x1) / 2), wy(540), bz); K.bar.scale.set(th, (x1 - x0) * U, th); K.bar.rotation.z = Math.PI / 2;
+    K.barCaps[0].position.set(wx(x0), wy(540), bz); K.barCaps[1].position.set(wx(x1), wy(540), bz); K.barCaps.forEach(c => c.scale.setScalar(th));
+    K.bar.material.emissive.copy(hdr(COL.chalk, 2.2)).multiplyScalar(seg(t, 9.55, 9.85)); // ink while thick, glowing once it thins
   }
   const dm = makeDot(t);
   K.dot.visible = !!dm;
