@@ -391,7 +391,13 @@ function liquidWipe(g, p, color, dir = 1) {
   g.quadraticCurveTo(CX, yq, W, ys);
   g.lineTo(W + 300, ys); g.lineTo(W + 300, far); g.closePath(); g.fill();
 }
-function typeSlice(s, t, t0, cps = 40) { return s.slice(0, Math.max(0, Math.floor((t - t0) * cps))); }
+// Typing is a discrete event, so it must not motion-blur: during sub-frame accumulation
+// every sample reads the frame's own time (FT) and agrees on how many characters are out.
+let FT = null;
+function typeSlice(s, t, t0, cps = 40) {
+  const tt = FT !== null && Math.abs(t - FT) < 0.02 ? FT : t;
+  return s.slice(0, Math.max(0, Math.floor((tt - t0) * cps)));
+}
 
 // Variable-font glyphs are built from overlapping contours, and Chrome anti-aliases each
 // contour on its own, which leaves hairline seams inside large letters at 4K. Stroking the
@@ -745,15 +751,69 @@ function surfDot(t) {
   return null;
 }
 
-function moLetter(i, t) {
-  const gl = MO.lay.list[i], s = 10.25 + i * 0.125;
-  const e = Ez.outQuart(seg(t, s, s + 1.1));
-  // looser tracking while the letters ride and tilt, so neighbours never sweep into each other;
-  // it tightens to the word's real spacing as the wave flattens into the slam
-  const spread = lerp(1.22, 1, Ez.inOutCubic(seg(t, 11.65, 12.0)));
-  const x = lerp(W + 200 + i * 60, CX + (MO.x + gl.x + gl.w / 2 - CX) * spread, e);
-  return { x, y: waveY(x, t) - 3, r: Math.atan(waveSlope(x, t)), gl };
+// Letters ride the wave: each sits on it and leans with its slope. Neighbours leaning
+// toward each other would collide, so the row is laid out together: every glyph box is
+// rotated, and each letter is pushed right until it clears the one before it. The push is
+// a max of continuous functions, so the motion stays smooth; it vanishes as the wave flattens.
+const moOn = (x, t) => ({ x, y: waveY(x, t) - 3, r: clamp(0.6 * Math.atan(waveSlope(x, t)), -0.28, 0.28) });
+function moEdge(c, h, yw, side) { // x of a rotated w×h glyph box's left/right edge at world height yw
+  const cs = Math.cos(c.r), sn = Math.sin(c.r), hw = c.gl.w / 2;
+  const P = [[-hw, -h], [hw, -h], [hw, 0], [-hw, 0]].map(([u, v]) => [c.x + u * cs - v * sn, c.y + u * sn + v * cs]);
+  let best = null;
+  for (let k = 0; k < 4; k++) {
+    const [ax, ay] = P[k], [bx, by] = P[(k + 1) % 4];
+    if ((yw - ay) * (yw - by) > 0 || ay === by) continue;
+    const x = ax + ((yw - ay) / (by - ay)) * (bx - ax);
+    best = best === null ? x : side > 0 ? Math.max(best, x) : Math.min(best, x);
+  }
+  return best;
 }
+const MO_ROW = new Map();
+// Extruded letters (the 3D edition) also show side walls in perspective, which eat into the gap
+// in proportion to their distance from the lens axis; wall = depth / camera distance, bevel in px.
+const MO_EXTRUDE = { wall: 0, bevel: 0, spread: 0 };
+function moClear(A, B, h, amp) { // how far B must move right to clear A
+  const gap = amp * (16 + MO_EXTRUDE.bevel + MO_EXTRUDE.wall * (Math.max(0, CX - A.x) + Math.max(0, B.x - CX)));
+  let need = -Infinity;
+  const y0 = Math.min(A.y, B.y) - h - 80, y1 = Math.max(A.y, B.y) + 80;
+  for (let s = 0; s <= 32; s++) {
+    const yw = lerp(y0, y1, s / 32), ra = moEdge(A, h, yw, 1), lb = moEdge(B, h, yw, -1);
+    if (ra !== null && lb !== null) need = Math.max(need, ra - lb + gap);
+  }
+  return need;
+}
+function moRow(t) {
+  if (MO_ROW.has(t)) return MO_ROW.get(t);
+  const amp = Math.min(1, waveAmp(t) / 80), spread = 1 + (0.06 + MO_EXTRUDE.spread) * amp, h = MO.cap;
+  const base = MO.lay.list.map((gl, i) => {
+    const e = Ez.outQuart(seg(t, 10.25 + i * 0.125, 11.35 + i * 0.125));
+    return lerp(W + 200 + i * 60, CX + (MO.x + gl.x + gl.w / 2 - CX) * spread, e);
+  });
+  const place = (i, x) => ({ ...moOn(x, t), gl: MO.lay.list[i] });
+  // Sweep left to right: each letter is carried by its left neighbour's push, then pushed
+  // further until it clears it (re-seated on the wave after each push, since that changes
+  // its height and lean). The row is re-centred on the total push from the previous pass.
+  let C = 0, row;
+  for (let pass = 0; pass < 3; pass++) {
+    const P = [0];
+    row = [place(0, base[0] - C)];
+    for (let i = 1; i < base.length; i++) {
+      let p = P[i - 1];
+      for (let it = 0; it < 4; it++) {
+        const need = moClear(row[i - 1], place(i, base[i] + p - C), h, amp);
+        if (need <= 0) break;
+        p += need;
+      }
+      P.push(p);
+      row.push(place(i, base[i] + p - C));
+    }
+    C = P[P.length - 1] / 2;
+  }
+  if (MO_ROW.size > 256) MO_ROW.clear();
+  MO_ROW.set(t, row);
+  return row;
+}
+const moLetter = (i, t) => moRow(t)[i];
 
 function drawRow(g, k, t) {
   const yc = CY + Math.sign(k) * [0, 188, 342, 496][Math.abs(k)];
@@ -1049,7 +1109,7 @@ function sceneCode(g, t) {
 
 // ═══ G · THE CLAIM (22 – 26s)  &  H · THE FINE PRINT (26 – 30s) ═══
 const FN = {};
-const FOOTNOTE = '*Except this one. This one is 2,898 lines of code.';
+const FOOTNOTE = '*Except this one. This one is 2,989 lines of code.';
 onPrep(() => {
   const L1 = F.disp(150), mw = textW(F.disp(100), 'MOTION');
   const ms = Math.min(310, (1620 / mw) * 100);
@@ -1075,17 +1135,18 @@ onPrep(() => {
   FN.noteW = textW(FN.noteFont, FN.note);
 });
 
-// Reflow in two moves so no word crosses another: each shrinks in place, then travels.
+// Reflow so no two words can ever overlap: each shrinks in place, then x leads y. Words slide
+// into their sentence columns while still on separate lines, then drop onto one baseline.
 function reflowOf(w, i, t) {
   const a = Ez.inOutCubic(seg(t, CUE.reflow + i * 0.03, CUE.reflow + i * 0.03 + 0.35));
-  const b = Ez.inOutBack(seg(t, CUE.reflow + 0.3 + i * 0.04, CUE.reflow + 0.8 + i * 0.04), 1.2);
-  return { x: lerp(w.x, w.tx, b), y: lerp(w.y, w.ty, b) + Math.sin(Math.PI * clamp(b)) * 30 * (i % 2 ? 1 : -1), s: lerp(1, w.s, a), a, b };
+  const b = seg(t, CUE.reflow + 0.3, CUE.reflow + 0.85), bx = Ez.outCubic(b), by = Ez.inCubic(b);
+  return { x: lerp(w.x, w.tx, bx), y: lerp(w.y, w.ty, by), s: lerp(1, w.s, a), a, bx, by };
 }
 // The full stop rides with CODE while it shrinks, then travels to its own place.
 function reflowDot(t) {
   const w = FN.words[4], f = reflowOf(w, 4, t), s = lerp(1, w.s, f.a);
   const x1 = w.x + (FN.dot.x - w.x) * s, y1 = w.y + (FN.dot.y - w.y) * s;
-  return { x: lerp(x1, FN.dotTo.x, f.b), y: lerp(y1, FN.dotTo.y, f.b), r: lerp(FN.dot.r * s, FN.dotTo.r, f.b) };
+  return { x: lerp(x1, FN.dotTo.x, f.bx), y: lerp(y1, FN.dotTo.y, f.by), r: lerp(FN.dot.r * s, FN.dotTo.r, f.bx) };
 }
 // A selection highlight that wipes away at full opacity: butter faded over ultramarine or ink
 // goes muddy, so instead the box shrinks off the letter and the ink copy is clipped to it.
@@ -1158,7 +1219,7 @@ function sceneFinale(g, t) {
     if (d) blob(g, d.x, d.y, d.r, d.sx, d.sy, COL.flamingo);
   } else {
     g.globalAlpha = out;
-    FN.words.forEach((w, i) => {
+    [4, 3, 2, 0, 1].map(i => [FN.words[i], i]).forEach(([w, i]) => { // back to front, so the hero reads last
       const f = reflowOf(w, i, t);
       g.save(); g.translate(f.x, f.y); g.scale(f.s, f.s);
       g.font = w.font; g.textAlign = 'left'; g.fillStyle = COL.chalk; g.fillText(w.str, 0, 0);
@@ -1326,12 +1387,14 @@ function renderAccum(canvas, t, samples = 16, shutter = 0.5) {
   const tg = accTmp.getContext('2d', { willReadFrequently: true });
   if (!accBuf || accBuf.length !== w * h * 4) accBuf = new Float32Array(w * h * 4);
   accBuf.fill(0);
+  FT = t;
   for (let k = 0; k < samples; k++) {
     const tk = t + ((k + 0.5) / samples - 0.5) * (shutter / FPS);
     renderFrame(accTmp, tk, false);
     const d = tg.getImageData(0, 0, w, h).data;
     for (let i = 0; i < d.length; i++) accBuf[i] += d[i];
   }
+  FT = null;
   const outImg = g.createImageData(w, h), o = outImg.data, inv = 1 / samples;
   for (let i = 0; i < o.length; i++) o[i] = accBuf[i] * inv + 0.5;
   g.setTransform(1, 0, 0, 1, 0, 0);
@@ -2216,6 +2279,25 @@ onPrep3(() => {
   K.barCaps = [new THREE.Mesh(K.ball, K.bar.material), new THREE.Mesh(K.ball, K.bar.material)]; K.barCaps.forEach(c => s.add(c));
 });
 
+function setMakeCam(t) {
+  const cam = S3.make.cam, d = Ez.inOutSine(seg(t, 5.6, 10));
+  cam.position.set(lerp(-1.6, 1.4, d), lerp(-0.9, 0.5, d), CAM_Z * lerp(0.98, 0.9, d));
+  cam.fov = FOV; cam.lookAt(0, 0, 0); shake3(cam, t);
+}
+// The specimen labels live in screen space at a fixed margin, riding on the projected guide lines,
+// so camera drift can neither push them off the frame nor under the letters.
+function makeLabels(g, t) {
+  const a = (1 - seg(t, 9.4, 9.7)) * 0.85;
+  if (t < 6.2 || a <= 0) return;
+  setMakeCam(t);
+  g.save(); g.globalAlpha = a; g.fillStyle = COL.ultra; g.font = F.mono(14); g.textAlign = 'left';
+  [['CAP 360', MK.top], ['MID 540', 540], ['BASE 720', MK.base]].forEach(([s, y], i) => {
+    const sy = toScreen(new THREE.Vector3(wx(40), wy(y), -0.6), S3.make.cam)[1];
+    g.fillText(typeSlice(s, t, 6.2 + i * 0.08, 30), 40, sy - 10);
+  });
+  g.restore();
+}
+
 function tubePiece(kind) {
   const K = S3.make, list = K.pool[kind];
   if (K.used[kind] >= list.length) {
@@ -2250,9 +2332,7 @@ function polyTube(p, a, b, xform) {
 
 function updateMake(t) {
   const K = S3.make, cam = K.cam;
-  const d = Ez.inOutSine(seg(t, 5.6, 10));
-  cam.position.set(lerp(-1.6, 1.4, d), lerp(-0.9, 0.5, d), CAM_Z * lerp(0.98, 0.9, d));
-  cam.fov = FOV; cam.lookAt(0, 0, 0); shake3(cam, t);
+  setMakeCam(t);
   const fade = 1 - seg(t, 9.4, 9.7);
   K.grid.forEach(({ m, h, s }) => {
     const e = Ez.outExpo(seg(t, s, s + 0.6));
@@ -2262,7 +2342,6 @@ function updateMake(t) {
   const g = K.labCanvas.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
   g.fillStyle = '#fff'; g.font = F.mono(15); g.textAlign = 'left';
-  [['CAP 360', MK.top], ['MID 540', 540], ['BASE 720', MK.base]].forEach(([s, y], i) => g.fillText(typeSlice(s, t, 6.2 + i * 0.08, 30), 110, y - 10)); // inset: the camera drifts
   g.textAlign = 'right'; g.fillText(typeSlice('4 GLYPHS · 13 SEGMENTS · 1 DOT', t, 6.6, 40), 1721, 300);
   g.textAlign = 'left'; g.fillText(typeSlice('STROKE 76', t, 6.9, 30), 199, 800);
   K.lab.material.map.needsUpdate = true; K.lab.material.opacity = fade;
@@ -2287,7 +2366,7 @@ function updateMake(t) {
     const bz = 0.45 * Ez.inOutCubic(seg(t, CUE.lineOut, CUE.lineOut + 0.15)); // part of the E, then in front of the strokes as it becomes the horizon
     K.bar.position.set(wx((x0 + x1) / 2), wy(540), bz); K.bar.scale.set(th, (x1 - x0) * U, th); K.bar.rotation.z = Math.PI / 2;
     K.barCaps[0].position.set(wx(x0), wy(540), bz); K.barCaps[1].position.set(wx(x1), wy(540), bz); K.barCaps.forEach(c => c.scale.setScalar(th));
-    K.bar.material.emissive.copy(hdr(COL.chalk, 2.2)).multiplyScalar(seg(t, 9.55, 9.85)); // ink while thick, glowing once it thins
+    K.bar.material.emissive.copy(hdr(COL.chalk, 2.2)).multiplyScalar(Ez.inOutCubic(seg(t, 9.5, 9.62))); // ink while thick, glowing once it thins
   }
   const dm = makeDot(t);
   K.dot.visible = !!dm;
@@ -2317,13 +2396,15 @@ function rowCanvas(outline) {
   }
   return c;
 }
+// MOTION is extruded 0.8 deep (bevel 0.045) and seen from CAM_Z: give the wave's collision pass that much more room
+MO_EXTRUDE.wall = 0.8 / (CAM_Z - 0.8); MO_EXTRUDE.bevel = 2 * 4.5; MO_EXTRUDE.spread = -0.05; // wider gaps, so a tighter start keeps N in frame
 onPrep3(() => {
   const s = world(COL.ultra, 26, 70), cam = cam3();
   const Mo = (S3.motion = { s, cam });
   s.add(new THREE.HemisphereLight(lin('#ffffff'), lin('#1a1aa0'), 0.35));
   Mo.key = new THREE.DirectionalLight(lin('#ffffff'), 0.9); Mo.key.position.set(6, 8, 10); Mo.key.castShadow = true;
   Object.assign(Mo.key.shadow.camera, { left: -14, right: 14, top: 9, bottom: -9, near: 1, far: 40 }); Mo.key.shadow.mapSize.set(2048, 1024); s.add(Mo.key);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), M3.ultraWall); floor.rotation.x = -Math.PI / 2; floor.position.y = -9.5; floor.receiveShadow = true; s.add(floor); // below the lowest marquee strip
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), M3.ultraWall); floor.rotation.x = -Math.PI / 2; floor.position.y = -4.2; floor.receiveShadow = true; s.add(floor); Mo.floor = floor; // catches the wave's shadows; hidden under the slam, before the marquee
   const back = new THREE.Mesh(new THREE.PlaneGeometry(160, 60), M3.ultraWall); back.position.z = -22; back.receiveShadow = true; s.add(back);
   Mo.all = new THREE.Group(); s.add(Mo.all);
   // the wave: a glowing ribbon whose vertices follow waveY()
@@ -2363,6 +2444,7 @@ function updateMotion(t) {
   cam.fov = fov; cam.position.set(0, lerp(0, 0.4, b), dist); cam.lookAt(0, 0, 0); cam.rotation.z = -0.09 * b * (1 - col);
   shake3(cam, t);
   Mo.all.scale.set(1, 1 - 0.985 * col, 1);
+  Mo.floor.visible = t < CUE.slam + 0.02;
   Mo.key.intensity = 0.9 + 0.4 * pulse(t, CUE.slam, 6);
 
   // ribbon
@@ -2477,6 +2559,7 @@ function updateWithout(t) {
 function codeLayer(seed) {
   const c = document.createElement('canvas'); c.width = 2048; c.height = 1152;
   const g = c.getContext('2d'); g.font = F.mono(24); g.textAlign = 'left';
+  if (seed > 0) g.filter = 'blur(1px)'; // deeper layers a touch softer
   const cw = textW(F.mono(24), 'M');
   for (let j = 0; j < 30; j++) {
     const src = CD.lines[(j + seed) % CD.lines.length], y = 40 + j * 37;
@@ -2486,22 +2569,24 @@ function codeLayer(seed) {
   const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter; t.anisotropy = 4;
   return t;
 }
+const CD_G = 0.93;
 onPrep3(() => {
   const s = world(COL.ink, 12, 44), cam = cam3();
   const Cd = (S3.code = { s, cam });
   s.add(new THREE.HemisphereLight(lin('#a0a0ff'), lin('#000000'), 0.25));
   Cd.key = new THREE.SpotLight(lin('#ffffff'), 2.2, 50, 0.5, 0.6, 1.2); Cd.key.position.set(-5, 8, 12); s.add(Cd.key, Cd.key.target);
   Cd.clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 20);
-  Cd.layers = [[-3, 0.4, 0], [-8, 0.28, 7], [-15, 0.18, 13]].map(([z, k, seed]) => {
+  Cd.layers = [[-3, 0.4, 0], [-8, 0.16, 7], [-15, 0.08, 13]].map(([z, k, seed]) => {
     const sc = 1 + 0.45 * ((CAM_Z - z) / CAM_Z - 1); // only part-compensated, so deeper layers read smaller and finer
     const m = new THREE.Mesh(new THREE.PlaneGeometry(20.48 * sc, 11.52 * sc), new THREE.MeshBasicMaterial({ map: codeLayer(seed), transparent: true, depthWrite: false, color: hdr('#ffffff', 1.3 * k), clippingPlanes: [Cd.clip] }));
     m.position.z = z; s.add(m); return { m, z, sc, k };
   });
   Cd.faceMat = M3.chalkFace; Cd.brMat = [new THREE.MeshStandardMaterial({ color: lin(COL.butter), emissive: hdr(COL.butter, 1.4), roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: lin('#b8952e'), roughness: 0.5 })];
   // each glyph hangs in a group pivoting at its cap-height centre, so it tumbles in place
+  // glyphs a touch under the 2D size: the bevel and the closer camera would otherwise close the gaps
   Cd.slots = [...'<CODE/>'].map((ch, i) => {
-    const m = new THREE.Mesh(glyph3('mono', ch, 240 * U, 0.5, 0.03).geo, i === 0 || i >= 5 ? Cd.brMat : M3.chalk);
-    m.castShadow = true; m.position.y = -(CD.cap * U) / 2;
+    const m = new THREE.Mesh(glyph3('mono', ch, CD_G * 240 * U, 0.5, 0.03).geo, i === 0 || i >= 5 ? Cd.brMat : M3.chalk);
+    m.castShadow = true; m.position.y = -(CD_G * CD.cap * U) / 2;
     const g = new THREE.Group(); g.add(m); s.add(g); return { g, m };
   });
   Cd.hl = [1, 2, 3, 4].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, (CD.cap + 44) * U, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6) })); m.visible = false; s.add(m); return m; });
@@ -2518,7 +2603,7 @@ function updateCode(t) {
   Cd.clip.constant = lerp(-12, 12, Ez.outCubic(seg(t, CUE.code, 18.5)));
   Cd.layers.forEach(({ m, z, sc, k }, i) => {
     const fall = t > CUE.fall + 0.05 ? 0.5 * 42 * (t - CUE.fall - 0.05 - i * 0.12) ** 2 * (t - CUE.fall - 0.05 - i * 0.12 > 0) : 0;
-    m.position.set([0, 0.7, -0.5][i], [0, 0.19, 0.11][i] + (0.38 * (t - CUE.code) * sc) - fall * sc, z);
+    m.position.set([0.35, 0.7, -0.5][i], [0, 0.19, 0.11][i] + 0.38 * [1, 0.55, 0.3][i] * (t - CUE.code) * sc - fall * sc, z);
     m.material.opacity = 1 - seg(t, CUE.fall + 0.3 + i * 0.1, CUE.fall + 0.8 + i * 0.1);
   });
   Cd.hl.forEach(h => (h.visible = false));
@@ -2526,10 +2611,13 @@ function updateCode(t) {
     const { g, m } = Cd.slots[i], sl = codeSlot(i, t);
     g.visible = !!sl;
     if (!sl) continue;
-    if (i >= 1 && i <= 4) m.geometry = glyph3('mono', sl.ch, 240 * U, 0.5, 0.03).geo;
+    if (i >= 1 && i <= 4) m.geometry = glyph3('mono', sl.ch, CD_G * 240 * U, 0.5, 0.03).geo;
     const d = Math.max(0, t - (CUE.fall + i * 0.06));
-    g.position.set(wx(CD.x + CD.adv * (i + 0.5) + sl.ox) + (rnd(i, 79) - 0.5) * 1.4 * d, wy(CD.y - CD.cap / 2 + sl.oy), 3.2 * d * d * (0.55 + 0.9 * rnd(i, 77)));
-    g.rotation.set(sl.rot * 0.8, sl.rot * 0.6, -sl.rot); g.scale.setScalar(sl.pop);
+    // fan out from the centre and split in depth, so no two falling glyphs share a path
+    const split = [0, 0, 0.9, -0.6, 0.5, 0, 0][i] * Ez.outCubic(seg(t, CUE.fall, CUE.fall + 0.12));
+    g.position.set(wx(CD.x + CD.adv * (i + 0.5) + sl.ox) + (i - 3) * 1.8 * d, wy(CD.y - CD.cap / 2 + sl.oy), 3.2 * d * d + split);
+    const damp = i === 3 ? 0.5 : 1;
+    g.rotation.set(sl.rot * 0.8 * damp, sl.rot * 0.6 * damp, -sl.rot); g.scale.setScalar(sl.pop);
     if (i >= 1 && i <= 4 && t < CUE.fall) { // selection highlight wipes off at full strength
       const L = CUE.locks[i - 1] + 0.03, out = Ez.inOutCubic(seg(t, L + 0.05, L + 0.3)), h = Cd.hl[i - 1];
       if (t >= L && out < 1) {
@@ -2583,6 +2671,7 @@ onPrep3(() => {
   Cl.noteCanvas = nc; Cl.note = textPlane(nc, W * U, 0.8); Cl.note.position.set(0, wy(700) + 0.12, 0.1); s.add(Cl.note);
 });
 
+const SIDE_INK = lin('#2a2930');
 function updateClaim(t, inkMode) {
   const Cl = S3.claim, cam = Cl.cam;
   const d = Ez.inOutSine(seg(t, 21.8, 30));
@@ -2592,6 +2681,7 @@ function updateClaim(t, inkMode) {
   const sw = seg(t, 24.4, 26.2);
   Cl.sweep.intensity = 4.5 * Math.sin(Math.PI * sw); Cl.sweep.target.position.set(lerp(-11, 11, Ez.inOutSine(sw)), 0, 0);
   Cl.key.intensity = inkMode ? 1.0 : 1.5;
+  Cl.words.forEach(({ mats }) => mats[1].color.copy(inkMode ? SIDE_INK : M3.chalkSide.color)); // dark walls on ink, so the extrusion can't read as a second copy
   const out = 1 - seg(t, CUE.fadeOut + 0.25, CUE.fadeOut + 0.6);
 
   Cl.words.forEach(({ w, w3, plane, mats }, i) => {
@@ -2602,8 +2692,8 @@ function updateClaim(t, inkMode) {
     w3.letters.forEach((L, k) => { L.mesh.position.set(L.x + L.w / 2, 0, 0); L.mesh.scale.set(1, 1, 1); L.mesh.rotation.set(0, 0, 0); L.mesh.visible = true; });
     if (t < CUE.reflow) {
       w3.group.position.set(wx(w.x), wy(w.y), 0); w3.group.scale.setScalar(1);
-      if (i <= 1) { // rise through a matte at the baseline
-        plane.constant = -wy(w.y) + 0.001;
+      if (i <= 1) { // rise through a matte at the baseline; released once risen so shadows return
+        if (t < t0 + (w3.letters.length - 1) * 0.035 + 0.55) plane.constant = -wy(w.y) + 0.04;
         w3.letters.forEach((L, k) => { const e = Ez.outExpo(seg(t, t0 + k * 0.035, t0 + k * 0.035 + 0.55)); L.mesh.position.y = -(1 - e) * (w.lay.asc + 40) * U; });
       } else if (i === 2) { // slides in hot, stretched by its own speed
         w3.letters.forEach((L, k) => { const e = Ez.outExpo(seg(t, t0 + k * 0.03, t0 + k * 0.03 + 0.7)); L.mesh.position.x += (1 - e) * (1700 + k * 120) * U; L.mesh.scale.x = 1 + 0.8 * (1 - e); L.mesh.visible = e > 0; });
@@ -2640,7 +2730,7 @@ function updateClaim(t, inkMode) {
     x = lerp(x, CX, home); y = lerp(y, CY, home); r = lerp(r, DOT_R, home);
   }
   const popOut = Ez.inBack(seg(t, 29.7, 29.85), 2.5), retract = 1 - Ez.inBack(seg(t, CUE.fadeOut + 0.45, CUE.fadeOut + 0.65));
-  Cl.dot.visible = vis && popOut < 1; Cl.dotLight.intensity = Cl.dot.visible ? 3 : 0;
+  Cl.dot.visible = vis && popOut < 1; Cl.dotLight.intensity = Cl.dot.visible ? (inkMode ? 1.1 : 3) : 0; // on ink it only needs to warm the faces
   Cl.dot.material = inkMode ? M3.glowPink : M3.glowPinkSoft; // pink on ultramarine, glowing on ink
   if (vis) {
     const core = t >= CUE.reflow ? r * (1 - popOut) * lerp(1, 0.62, seg(t, CUE.asterisk, 27.4) * retract) : null;
@@ -2721,6 +2811,7 @@ function hud3(t) {
   const c = G3.hudCanvas, g = c.getContext('2d'), s = c.width / W;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height);
   g.setTransform(s, 0, 0, s, 0, 0);
+  makeLabels(g, t);
   // in CODE the source layers run under the HUD corners: lay a soft ink scrim behind the text
   const sa = seg(t, 18.3, 18.55) * (1 - seg(t, 21.4, 21.6));
   if (sa > 0) for (const [y0, y1] of [[0, 130], [H, H - 120]]) {

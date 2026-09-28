@@ -155,6 +155,25 @@ onPrep3(() => {
   K.barCaps = [new THREE.Mesh(K.ball, K.bar.material), new THREE.Mesh(K.ball, K.bar.material)]; K.barCaps.forEach(c => s.add(c));
 });
 
+function setMakeCam(t) {
+  const cam = S3.make.cam, d = Ez.inOutSine(seg(t, 5.6, 10));
+  cam.position.set(lerp(-1.6, 1.4, d), lerp(-0.9, 0.5, d), CAM_Z * lerp(0.98, 0.9, d));
+  cam.fov = FOV; cam.lookAt(0, 0, 0); shake3(cam, t);
+}
+// The specimen labels live in screen space at a fixed margin, riding on the projected guide lines,
+// so camera drift can neither push them off the frame nor under the letters.
+function makeLabels(g, t) {
+  const a = (1 - seg(t, 9.4, 9.7)) * 0.85;
+  if (t < 6.2 || a <= 0) return;
+  setMakeCam(t);
+  g.save(); g.globalAlpha = a; g.fillStyle = COL.ultra; g.font = F.mono(14); g.textAlign = 'left';
+  [['CAP 360', MK.top], ['MID 540', 540], ['BASE 720', MK.base]].forEach(([s, y], i) => {
+    const sy = toScreen(new THREE.Vector3(wx(40), wy(y), -0.6), S3.make.cam)[1];
+    g.fillText(typeSlice(s, t, 6.2 + i * 0.08, 30), 40, sy - 10);
+  });
+  g.restore();
+}
+
 function tubePiece(kind) {
   const K = S3.make, list = K.pool[kind];
   if (K.used[kind] >= list.length) {
@@ -189,9 +208,7 @@ function polyTube(p, a, b, xform) {
 
 function updateMake(t) {
   const K = S3.make, cam = K.cam;
-  const d = Ez.inOutSine(seg(t, 5.6, 10));
-  cam.position.set(lerp(-1.6, 1.4, d), lerp(-0.9, 0.5, d), CAM_Z * lerp(0.98, 0.9, d));
-  cam.fov = FOV; cam.lookAt(0, 0, 0); shake3(cam, t);
+  setMakeCam(t);
   const fade = 1 - seg(t, 9.4, 9.7);
   K.grid.forEach(({ m, h, s }) => {
     const e = Ez.outExpo(seg(t, s, s + 0.6));
@@ -201,7 +218,6 @@ function updateMake(t) {
   const g = K.labCanvas.getContext('2d');
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, H);
   g.fillStyle = '#fff'; g.font = F.mono(15); g.textAlign = 'left';
-  [['CAP 360', MK.top], ['MID 540', 540], ['BASE 720', MK.base]].forEach(([s, y], i) => g.fillText(typeSlice(s, t, 6.2 + i * 0.08, 30), 110, y - 10)); // inset: the camera drifts
   g.textAlign = 'right'; g.fillText(typeSlice('4 GLYPHS · 13 SEGMENTS · 1 DOT', t, 6.6, 40), 1721, 300);
   g.textAlign = 'left'; g.fillText(typeSlice('STROKE 76', t, 6.9, 30), 199, 800);
   K.lab.material.map.needsUpdate = true; K.lab.material.opacity = fade;
@@ -226,7 +242,7 @@ function updateMake(t) {
     const bz = 0.45 * Ez.inOutCubic(seg(t, CUE.lineOut, CUE.lineOut + 0.15)); // part of the E, then in front of the strokes as it becomes the horizon
     K.bar.position.set(wx((x0 + x1) / 2), wy(540), bz); K.bar.scale.set(th, (x1 - x0) * U, th); K.bar.rotation.z = Math.PI / 2;
     K.barCaps[0].position.set(wx(x0), wy(540), bz); K.barCaps[1].position.set(wx(x1), wy(540), bz); K.barCaps.forEach(c => c.scale.setScalar(th));
-    K.bar.material.emissive.copy(hdr(COL.chalk, 2.2)).multiplyScalar(seg(t, 9.55, 9.85)); // ink while thick, glowing once it thins
+    K.bar.material.emissive.copy(hdr(COL.chalk, 2.2)).multiplyScalar(Ez.inOutCubic(seg(t, 9.5, 9.62))); // ink while thick, glowing once it thins
   }
   const dm = makeDot(t);
   K.dot.visible = !!dm;

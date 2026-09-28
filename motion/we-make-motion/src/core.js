@@ -244,7 +244,13 @@ function liquidWipe(g, p, color, dir = 1) {
   g.quadraticCurveTo(CX, yq, W, ys);
   g.lineTo(W + 300, ys); g.lineTo(W + 300, far); g.closePath(); g.fill();
 }
-function typeSlice(s, t, t0, cps = 40) { return s.slice(0, Math.max(0, Math.floor((t - t0) * cps))); }
+// Typing is a discrete event, so it must not motion-blur: during sub-frame accumulation
+// every sample reads the frame's own time (FT) and agrees on how many characters are out.
+let FT = null;
+function typeSlice(s, t, t0, cps = 40) {
+  const tt = FT !== null && Math.abs(t - FT) < 0.02 ? FT : t;
+  return s.slice(0, Math.max(0, Math.floor((tt - t0) * cps)));
+}
 
 // Variable-font glyphs are built from overlapping contours, and Chrome anti-aliases each
 // contour on its own, which leaves hairline seams inside large letters at 4K. Stroking the

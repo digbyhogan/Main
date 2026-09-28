@@ -53,15 +53,69 @@ function surfDot(t) {
   return null;
 }
 
-function moLetter(i, t) {
-  const gl = MO.lay.list[i], s = 10.25 + i * 0.125;
-  const e = Ez.outQuart(seg(t, s, s + 1.1));
-  // looser tracking while the letters ride and tilt, so neighbours never sweep into each other;
-  // it tightens to the word's real spacing as the wave flattens into the slam
-  const spread = lerp(1.22, 1, Ez.inOutCubic(seg(t, 11.65, 12.0)));
-  const x = lerp(W + 200 + i * 60, CX + (MO.x + gl.x + gl.w / 2 - CX) * spread, e);
-  return { x, y: waveY(x, t) - 3, r: Math.atan(waveSlope(x, t)), gl };
+// Letters ride the wave: each sits on it and leans with its slope. Neighbours leaning
+// toward each other would collide, so the row is laid out together: every glyph box is
+// rotated, and each letter is pushed right until it clears the one before it. The push is
+// a max of continuous functions, so the motion stays smooth; it vanishes as the wave flattens.
+const moOn = (x, t) => ({ x, y: waveY(x, t) - 3, r: clamp(0.6 * Math.atan(waveSlope(x, t)), -0.28, 0.28) });
+function moEdge(c, h, yw, side) { // x of a rotated w×h glyph box's left/right edge at world height yw
+  const cs = Math.cos(c.r), sn = Math.sin(c.r), hw = c.gl.w / 2;
+  const P = [[-hw, -h], [hw, -h], [hw, 0], [-hw, 0]].map(([u, v]) => [c.x + u * cs - v * sn, c.y + u * sn + v * cs]);
+  let best = null;
+  for (let k = 0; k < 4; k++) {
+    const [ax, ay] = P[k], [bx, by] = P[(k + 1) % 4];
+    if ((yw - ay) * (yw - by) > 0 || ay === by) continue;
+    const x = ax + ((yw - ay) / (by - ay)) * (bx - ax);
+    best = best === null ? x : side > 0 ? Math.max(best, x) : Math.min(best, x);
+  }
+  return best;
 }
+const MO_ROW = new Map();
+// Extruded letters (the 3D edition) also show side walls in perspective, which eat into the gap
+// in proportion to their distance from the lens axis; wall = depth / camera distance, bevel in px.
+const MO_EXTRUDE = { wall: 0, bevel: 0, spread: 0 };
+function moClear(A, B, h, amp) { // how far B must move right to clear A
+  const gap = amp * (16 + MO_EXTRUDE.bevel + MO_EXTRUDE.wall * (Math.max(0, CX - A.x) + Math.max(0, B.x - CX)));
+  let need = -Infinity;
+  const y0 = Math.min(A.y, B.y) - h - 80, y1 = Math.max(A.y, B.y) + 80;
+  for (let s = 0; s <= 32; s++) {
+    const yw = lerp(y0, y1, s / 32), ra = moEdge(A, h, yw, 1), lb = moEdge(B, h, yw, -1);
+    if (ra !== null && lb !== null) need = Math.max(need, ra - lb + gap);
+  }
+  return need;
+}
+function moRow(t) {
+  if (MO_ROW.has(t)) return MO_ROW.get(t);
+  const amp = Math.min(1, waveAmp(t) / 80), spread = 1 + (0.06 + MO_EXTRUDE.spread) * amp, h = MO.cap;
+  const base = MO.lay.list.map((gl, i) => {
+    const e = Ez.outQuart(seg(t, 10.25 + i * 0.125, 11.35 + i * 0.125));
+    return lerp(W + 200 + i * 60, CX + (MO.x + gl.x + gl.w / 2 - CX) * spread, e);
+  });
+  const place = (i, x) => ({ ...moOn(x, t), gl: MO.lay.list[i] });
+  // Sweep left to right: each letter is carried by its left neighbour's push, then pushed
+  // further until it clears it (re-seated on the wave after each push, since that changes
+  // its height and lean). The row is re-centred on the total push from the previous pass.
+  let C = 0, row;
+  for (let pass = 0; pass < 3; pass++) {
+    const P = [0];
+    row = [place(0, base[0] - C)];
+    for (let i = 1; i < base.length; i++) {
+      let p = P[i - 1];
+      for (let it = 0; it < 4; it++) {
+        const need = moClear(row[i - 1], place(i, base[i] + p - C), h, amp);
+        if (need <= 0) break;
+        p += need;
+      }
+      P.push(p);
+      row.push(place(i, base[i] + p - C));
+    }
+    C = P[P.length - 1] / 2;
+  }
+  if (MO_ROW.size > 256) MO_ROW.clear();
+  MO_ROW.set(t, row);
+  return row;
+}
+const moLetter = (i, t) => moRow(t)[i];
 
 function drawRow(g, k, t) {
   const yc = CY + Math.sign(k) * [0, 188, 342, 496][Math.abs(k)];

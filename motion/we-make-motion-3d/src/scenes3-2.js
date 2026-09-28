@@ -13,13 +13,15 @@ function rowCanvas(outline) {
   }
   return c;
 }
+// MOTION is extruded 0.8 deep (bevel 0.045) and seen from CAM_Z: give the wave's collision pass that much more room
+MO_EXTRUDE.wall = 0.8 / (CAM_Z - 0.8); MO_EXTRUDE.bevel = 2 * 4.5; MO_EXTRUDE.spread = -0.05; // wider gaps, so a tighter start keeps N in frame
 onPrep3(() => {
   const s = world(COL.ultra, 26, 70), cam = cam3();
   const Mo = (S3.motion = { s, cam });
   s.add(new THREE.HemisphereLight(lin('#ffffff'), lin('#1a1aa0'), 0.35));
   Mo.key = new THREE.DirectionalLight(lin('#ffffff'), 0.9); Mo.key.position.set(6, 8, 10); Mo.key.castShadow = true;
   Object.assign(Mo.key.shadow.camera, { left: -14, right: 14, top: 9, bottom: -9, near: 1, far: 40 }); Mo.key.shadow.mapSize.set(2048, 1024); s.add(Mo.key);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), M3.ultraWall); floor.rotation.x = -Math.PI / 2; floor.position.y = -9.5; floor.receiveShadow = true; s.add(floor); // below the lowest marquee strip
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(120, 120), M3.ultraWall); floor.rotation.x = -Math.PI / 2; floor.position.y = -4.2; floor.receiveShadow = true; s.add(floor); Mo.floor = floor; // catches the wave's shadows; hidden under the slam, before the marquee
   const back = new THREE.Mesh(new THREE.PlaneGeometry(160, 60), M3.ultraWall); back.position.z = -22; back.receiveShadow = true; s.add(back);
   Mo.all = new THREE.Group(); s.add(Mo.all);
   // the wave: a glowing ribbon whose vertices follow waveY()
@@ -59,6 +61,7 @@ function updateMotion(t) {
   cam.fov = fov; cam.position.set(0, lerp(0, 0.4, b), dist); cam.lookAt(0, 0, 0); cam.rotation.z = -0.09 * b * (1 - col);
   shake3(cam, t);
   Mo.all.scale.set(1, 1 - 0.985 * col, 1);
+  Mo.floor.visible = t < CUE.slam + 0.02;
   Mo.key.intensity = 0.9 + 0.4 * pulse(t, CUE.slam, 6);
 
   // ribbon
@@ -173,6 +176,7 @@ function updateWithout(t) {
 function codeLayer(seed) {
   const c = document.createElement('canvas'); c.width = 2048; c.height = 1152;
   const g = c.getContext('2d'); g.font = F.mono(24); g.textAlign = 'left';
+  if (seed > 0) g.filter = 'blur(1px)'; // deeper layers a touch softer
   const cw = textW(F.mono(24), 'M');
   for (let j = 0; j < 30; j++) {
     const src = CD.lines[(j + seed) % CD.lines.length], y = 40 + j * 37;
@@ -182,22 +186,24 @@ function codeLayer(seed) {
   const t = new THREE.CanvasTexture(c); t.minFilter = THREE.LinearFilter; t.anisotropy = 4;
   return t;
 }
+const CD_G = 0.93;
 onPrep3(() => {
   const s = world(COL.ink, 12, 44), cam = cam3();
   const Cd = (S3.code = { s, cam });
   s.add(new THREE.HemisphereLight(lin('#a0a0ff'), lin('#000000'), 0.25));
   Cd.key = new THREE.SpotLight(lin('#ffffff'), 2.2, 50, 0.5, 0.6, 1.2); Cd.key.position.set(-5, 8, 12); s.add(Cd.key, Cd.key.target);
   Cd.clip = new THREE.Plane(new THREE.Vector3(0, -1, 0), 20);
-  Cd.layers = [[-3, 0.4, 0], [-8, 0.28, 7], [-15, 0.18, 13]].map(([z, k, seed]) => {
+  Cd.layers = [[-3, 0.4, 0], [-8, 0.16, 7], [-15, 0.08, 13]].map(([z, k, seed]) => {
     const sc = 1 + 0.45 * ((CAM_Z - z) / CAM_Z - 1); // only part-compensated, so deeper layers read smaller and finer
     const m = new THREE.Mesh(new THREE.PlaneGeometry(20.48 * sc, 11.52 * sc), new THREE.MeshBasicMaterial({ map: codeLayer(seed), transparent: true, depthWrite: false, color: hdr('#ffffff', 1.3 * k), clippingPlanes: [Cd.clip] }));
     m.position.z = z; s.add(m); return { m, z, sc, k };
   });
   Cd.faceMat = M3.chalkFace; Cd.brMat = [new THREE.MeshStandardMaterial({ color: lin(COL.butter), emissive: hdr(COL.butter, 1.4), roughness: 0.4 }), new THREE.MeshStandardMaterial({ color: lin('#b8952e'), roughness: 0.5 })];
   // each glyph hangs in a group pivoting at its cap-height centre, so it tumbles in place
+  // glyphs a touch under the 2D size: the bevel and the closer camera would otherwise close the gaps
   Cd.slots = [...'<CODE/>'].map((ch, i) => {
-    const m = new THREE.Mesh(glyph3('mono', ch, 240 * U, 0.5, 0.03).geo, i === 0 || i >= 5 ? Cd.brMat : M3.chalk);
-    m.castShadow = true; m.position.y = -(CD.cap * U) / 2;
+    const m = new THREE.Mesh(glyph3('mono', ch, CD_G * 240 * U, 0.5, 0.03).geo, i === 0 || i >= 5 ? Cd.brMat : M3.chalk);
+    m.castShadow = true; m.position.y = -(CD_G * CD.cap * U) / 2;
     const g = new THREE.Group(); g.add(m); s.add(g); return { g, m };
   });
   Cd.hl = [1, 2, 3, 4].map(() => { const m = new THREE.Mesh(new THREE.BoxGeometry(1, (CD.cap + 44) * U, 0.05), new THREE.MeshBasicMaterial({ color: hdr(COL.butter, 2.6) })); m.visible = false; s.add(m); return m; });
@@ -214,7 +220,7 @@ function updateCode(t) {
   Cd.clip.constant = lerp(-12, 12, Ez.outCubic(seg(t, CUE.code, 18.5)));
   Cd.layers.forEach(({ m, z, sc, k }, i) => {
     const fall = t > CUE.fall + 0.05 ? 0.5 * 42 * (t - CUE.fall - 0.05 - i * 0.12) ** 2 * (t - CUE.fall - 0.05 - i * 0.12 > 0) : 0;
-    m.position.set([0, 0.7, -0.5][i], [0, 0.19, 0.11][i] + (0.38 * (t - CUE.code) * sc) - fall * sc, z);
+    m.position.set([0.35, 0.7, -0.5][i], [0, 0.19, 0.11][i] + 0.38 * [1, 0.55, 0.3][i] * (t - CUE.code) * sc - fall * sc, z);
     m.material.opacity = 1 - seg(t, CUE.fall + 0.3 + i * 0.1, CUE.fall + 0.8 + i * 0.1);
   });
   Cd.hl.forEach(h => (h.visible = false));
@@ -222,10 +228,13 @@ function updateCode(t) {
     const { g, m } = Cd.slots[i], sl = codeSlot(i, t);
     g.visible = !!sl;
     if (!sl) continue;
-    if (i >= 1 && i <= 4) m.geometry = glyph3('mono', sl.ch, 240 * U, 0.5, 0.03).geo;
+    if (i >= 1 && i <= 4) m.geometry = glyph3('mono', sl.ch, CD_G * 240 * U, 0.5, 0.03).geo;
     const d = Math.max(0, t - (CUE.fall + i * 0.06));
-    g.position.set(wx(CD.x + CD.adv * (i + 0.5) + sl.ox) + (rnd(i, 79) - 0.5) * 1.4 * d, wy(CD.y - CD.cap / 2 + sl.oy), 3.2 * d * d * (0.55 + 0.9 * rnd(i, 77)));
-    g.rotation.set(sl.rot * 0.8, sl.rot * 0.6, -sl.rot); g.scale.setScalar(sl.pop);
+    // fan out from the centre and split in depth, so no two falling glyphs share a path
+    const split = [0, 0, 0.9, -0.6, 0.5, 0, 0][i] * Ez.outCubic(seg(t, CUE.fall, CUE.fall + 0.12));
+    g.position.set(wx(CD.x + CD.adv * (i + 0.5) + sl.ox) + (i - 3) * 1.8 * d, wy(CD.y - CD.cap / 2 + sl.oy), 3.2 * d * d + split);
+    const damp = i === 3 ? 0.5 : 1;
+    g.rotation.set(sl.rot * 0.8 * damp, sl.rot * 0.6 * damp, -sl.rot); g.scale.setScalar(sl.pop);
     if (i >= 1 && i <= 4 && t < CUE.fall) { // selection highlight wipes off at full strength
       const L = CUE.locks[i - 1] + 0.03, out = Ez.inOutCubic(seg(t, L + 0.05, L + 0.3)), h = Cd.hl[i - 1];
       if (t >= L && out < 1) {

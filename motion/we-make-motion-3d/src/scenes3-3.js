@@ -25,6 +25,7 @@ onPrep3(() => {
   Cl.noteCanvas = nc; Cl.note = textPlane(nc, W * U, 0.8); Cl.note.position.set(0, wy(700) + 0.12, 0.1); s.add(Cl.note);
 });
 
+const SIDE_INK = lin('#2a2930');
 function updateClaim(t, inkMode) {
   const Cl = S3.claim, cam = Cl.cam;
   const d = Ez.inOutSine(seg(t, 21.8, 30));
@@ -34,6 +35,7 @@ function updateClaim(t, inkMode) {
   const sw = seg(t, 24.4, 26.2);
   Cl.sweep.intensity = 4.5 * Math.sin(Math.PI * sw); Cl.sweep.target.position.set(lerp(-11, 11, Ez.inOutSine(sw)), 0, 0);
   Cl.key.intensity = inkMode ? 1.0 : 1.5;
+  Cl.words.forEach(({ mats }) => mats[1].color.copy(inkMode ? SIDE_INK : M3.chalkSide.color)); // dark walls on ink, so the extrusion can't read as a second copy
   const out = 1 - seg(t, CUE.fadeOut + 0.25, CUE.fadeOut + 0.6);
 
   Cl.words.forEach(({ w, w3, plane, mats }, i) => {
@@ -44,8 +46,8 @@ function updateClaim(t, inkMode) {
     w3.letters.forEach((L, k) => { L.mesh.position.set(L.x + L.w / 2, 0, 0); L.mesh.scale.set(1, 1, 1); L.mesh.rotation.set(0, 0, 0); L.mesh.visible = true; });
     if (t < CUE.reflow) {
       w3.group.position.set(wx(w.x), wy(w.y), 0); w3.group.scale.setScalar(1);
-      if (i <= 1) { // rise through a matte at the baseline
-        plane.constant = -wy(w.y) + 0.001;
+      if (i <= 1) { // rise through a matte at the baseline; released once risen so shadows return
+        if (t < t0 + (w3.letters.length - 1) * 0.035 + 0.55) plane.constant = -wy(w.y) + 0.04;
         w3.letters.forEach((L, k) => { const e = Ez.outExpo(seg(t, t0 + k * 0.035, t0 + k * 0.035 + 0.55)); L.mesh.position.y = -(1 - e) * (w.lay.asc + 40) * U; });
       } else if (i === 2) { // slides in hot, stretched by its own speed
         w3.letters.forEach((L, k) => { const e = Ez.outExpo(seg(t, t0 + k * 0.03, t0 + k * 0.03 + 0.7)); L.mesh.position.x += (1 - e) * (1700 + k * 120) * U; L.mesh.scale.x = 1 + 0.8 * (1 - e); L.mesh.visible = e > 0; });
@@ -82,7 +84,7 @@ function updateClaim(t, inkMode) {
     x = lerp(x, CX, home); y = lerp(y, CY, home); r = lerp(r, DOT_R, home);
   }
   const popOut = Ez.inBack(seg(t, 29.7, 29.85), 2.5), retract = 1 - Ez.inBack(seg(t, CUE.fadeOut + 0.45, CUE.fadeOut + 0.65));
-  Cl.dot.visible = vis && popOut < 1; Cl.dotLight.intensity = Cl.dot.visible ? 3 : 0;
+  Cl.dot.visible = vis && popOut < 1; Cl.dotLight.intensity = Cl.dot.visible ? (inkMode ? 1.1 : 3) : 0; // on ink it only needs to warm the faces
   Cl.dot.material = inkMode ? M3.glowPink : M3.glowPinkSoft; // pink on ultramarine, glowing on ink
   if (vis) {
     const core = t >= CUE.reflow ? r * (1 - popOut) * lerp(1, 0.62, seg(t, CUE.asterisk, 27.4) * retract) : null;
@@ -163,6 +165,7 @@ function hud3(t) {
   const c = G3.hudCanvas, g = c.getContext('2d'), s = c.width / W;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, c.width, c.height);
   g.setTransform(s, 0, 0, s, 0, 0);
+  makeLabels(g, t);
   // in CODE the source layers run under the HUD corners: lay a soft ink scrim behind the text
   const sa = seg(t, 18.3, 18.55) * (1 - seg(t, 21.4, 21.6));
   if (sa > 0) for (const [y0, y1] of [[0, 130], [H, H - 120]]) {

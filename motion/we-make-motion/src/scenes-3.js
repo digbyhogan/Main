@@ -166,17 +166,18 @@ onPrep(() => {
   FN.noteW = textW(FN.noteFont, FN.note);
 });
 
-// Reflow in two moves so no word crosses another: each shrinks in place, then travels.
+// Reflow so no two words can ever overlap: each shrinks in place, then x leads y. Words slide
+// into their sentence columns while still on separate lines, then drop onto one baseline.
 function reflowOf(w, i, t) {
   const a = Ez.inOutCubic(seg(t, CUE.reflow + i * 0.03, CUE.reflow + i * 0.03 + 0.35));
-  const b = Ez.inOutBack(seg(t, CUE.reflow + 0.3 + i * 0.04, CUE.reflow + 0.8 + i * 0.04), 1.2);
-  return { x: lerp(w.x, w.tx, b), y: lerp(w.y, w.ty, b) + Math.sin(Math.PI * clamp(b)) * 30 * (i % 2 ? 1 : -1), s: lerp(1, w.s, a), a, b };
+  const b = seg(t, CUE.reflow + 0.3, CUE.reflow + 0.85), bx = Ez.outCubic(b), by = Ez.inCubic(b);
+  return { x: lerp(w.x, w.tx, bx), y: lerp(w.y, w.ty, by), s: lerp(1, w.s, a), a, bx, by };
 }
 // The full stop rides with CODE while it shrinks, then travels to its own place.
 function reflowDot(t) {
   const w = FN.words[4], f = reflowOf(w, 4, t), s = lerp(1, w.s, f.a);
   const x1 = w.x + (FN.dot.x - w.x) * s, y1 = w.y + (FN.dot.y - w.y) * s;
-  return { x: lerp(x1, FN.dotTo.x, f.b), y: lerp(y1, FN.dotTo.y, f.b), r: lerp(FN.dot.r * s, FN.dotTo.r, f.b) };
+  return { x: lerp(x1, FN.dotTo.x, f.bx), y: lerp(y1, FN.dotTo.y, f.by), r: lerp(FN.dot.r * s, FN.dotTo.r, f.bx) };
 }
 // A selection highlight that wipes away at full opacity: butter faded over ultramarine or ink
 // goes muddy, so instead the box shrinks off the letter and the ink copy is clipped to it.
@@ -249,7 +250,7 @@ function sceneFinale(g, t) {
     if (d) blob(g, d.x, d.y, d.r, d.sx, d.sy, COL.flamingo);
   } else {
     g.globalAlpha = out;
-    FN.words.forEach((w, i) => {
+    [4, 3, 2, 0, 1].map(i => [FN.words[i], i]).forEach(([w, i]) => { // back to front, so the hero reads last
       const f = reflowOf(w, i, t);
       g.save(); g.translate(f.x, f.y); g.scale(f.s, f.s);
       g.font = w.font; g.textAlign = 'left'; g.fillStyle = COL.chalk; g.fillText(w.str, 0, 0);
@@ -417,12 +418,14 @@ function renderAccum(canvas, t, samples = 16, shutter = 0.5) {
   const tg = accTmp.getContext('2d', { willReadFrequently: true });
   if (!accBuf || accBuf.length !== w * h * 4) accBuf = new Float32Array(w * h * 4);
   accBuf.fill(0);
+  FT = t;
   for (let k = 0; k < samples; k++) {
     const tk = t + ((k + 0.5) / samples - 0.5) * (shutter / FPS);
     renderFrame(accTmp, tk, false);
     const d = tg.getImageData(0, 0, w, h).data;
     for (let i = 0; i < d.length; i++) accBuf[i] += d[i];
   }
+  FT = null;
   const outImg = g.createImageData(w, h), o = outImg.data, inv = 1 / samples;
   for (let i = 0; i < o.length; i++) o[i] = accBuf[i] * inv + 0.5;
   g.setTransform(1, 0, 0, 1, 0, 0);
