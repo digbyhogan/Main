@@ -1,0 +1,44 @@
+
+<!-- 24 · REVIEW AT SCALE -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Review at scale</span></div>
+  <h2>Review at scale</h2>
+  <p class="lede" style="margin-bottom:6mm">Each edition is {{FRAMES}} frames. I can’t sit back and watch a film play, so review became a pipeline: independent reviewers each take a slice, and every finding has to survive a skeptic before anyone fixes it.</p>
+  <div style="display:grid; grid-template-columns:repeat(4, 1fr); gap:4mm; margin-bottom:7mm">
+    <div style="border-top:2px solid var(--ink); padding-top:2.5mm"><div style="font:900 24pt/1 var(--disp)">300</div><div class="mono" style="font-size:6.4pt; letter-spacing:.08em; text-transform:uppercase; margin:1.6mm 0 1.2mm">frames inspected</div><p class="small" style="margin:0; color:var(--muted)">150 per edition, one every 0.2 s, split across 12 inspectors in five-second windows.</p></div>
+    <div style="border-top:2px solid var(--flamingo); padding-top:2.5mm"><div style="font:900 24pt/1 var(--disp)">22<span style="font-size:12pt; color:var(--muted)"> / 46</span></div><div class="mono" style="font-size:6.4pt; letter-spacing:.08em; text-transform:uppercase; margin:1.6mm 0 1.2mm">findings confirmed</div><p class="small" style="margin:0; color:var(--muted)">One skeptic per finding, told to refute it unless it was visible, unintended and noticeable at speed.</p></div>
+    <div style="border-top:2px solid var(--ultra); padding-top:2.5mm"><div style="font:900 24pt/1 var(--disp)">3</div><div class="mono" style="font-size:6.4pt; letter-spacing:.08em; text-transform:uppercase; margin:1.6mm 0 1.2mm">rounds of fixes</div><p class="small" style="margin:0; color:var(--muted)">22 verifiers compared old and new frames at the same timecodes; 2 sweeps hunted for regressions.</p></div>
+    <div style="border-top:2px solid var(--butter); padding-top:2.5mm"><div style="font:900 24pt/1 var(--disp)">43<span style="font-size:12pt; color:var(--muted)"> / 520</span></div><div class="mono" style="font-size:6.4pt; letter-spacing:.08em; text-transform:uppercase; margin:1.6mm 0 1.2mm">claims corrected</div><p class="small" style="margin:0; color:var(--muted)">Every technical claim in this document, checked against the source code.</p></div>
+  </div>
+  <div class="cols c3">
+    <div>
+      <h3>How a finding survives</h3>
+      <p class="small">Inspectors got the design intent up front, so deliberate choices (a hard cut, a glitch on a hit) weren’t reported, and every finding had to cite its frames. A skeptic then opened those frames plus the neighbours 0.2 s either side. It confirmed only if the flaw was visible, unintended and noticeable at full speed; if in doubt, it refuted. More than half the findings, 24 of 46, died there. Most were transitions that look odd for a frame or two, or effects working as designed.</p>
+    </div>
+    <div>
+      <h3>Fixes get checked too</h3>
+      <p class="small">Each fix was re-rendered at the same timecodes and handed to a fresh verifier with before and after. Round one: 17 fixed, 4 partly fixed, 1 not fixed, and the sweeps flagged 13 more. The misses taught the most. Loosening MOTION’s tracking only shrank a letter collision from 0.65 s to 0.2 s. What worked was a real collision pass (next page), proved by drawing each letter into its own mask: 103 frames, zero overlapping pixels. I checked rounds two and three myself, on fresh renders.</p>
+    </div>
+    <div>
+      <h3>The document, audited</h3>
+      <p class="small">520 claims were checked against the code; 52 were flagged, and 43 still stood after a second agent tried to defend the original wording. Where the text was right in spirit but the code disagreed, I changed the code: wipes, camera impacts and glitches now derive from the cue sheet, as the timing page says. That refactor had to change nothing on screen. 19 test frames came back pixel-identical, and the soundtrack differed by −132.8 dB RMS, level with the −132.7 dB between two identical renders.</p>
+    </div>
+  </div>
+  <figure style="margin-top:5mm">{{QA_SVG}}<p class="cap">Every finding from the frame review, placed at its timecode. Most confirmed flaws were in the 3D edition, the newer and more complex of the two.</p></figure>
+  <div class="folio">24</div>
+</section>
+
+<!-- 25 · REVIEW: BEFORE / AFTER -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Review at scale · caught and fixed</span></div>
+  <h2 style="font-size:17pt; margin-bottom:3mm">Caught, fixed, checked</h2>
+  <div class="ba"><figure><img src="img3/qb-wave.jpg"><div class="lbl">Before · 2D · 11.8 s</div></figure><figure><img src="img3/qa-wave.jpg"><div class="lbl">Final · 2D · 11.8 s</div></figure>
+    <p class="small" style="margin:0"><b>Letters that fused.</b> Riding the wave, neighbours that leaned toward each other swept into one another: MO became one shape and IO read as Ю. Now the row is laid out as a whole. Each letter’s box is rotated with its lean, and the next letter is pushed until it clears it, then re-seated on the wave. The push fades with the wave, so the slam lands on the true spacing. In 3D the gap also widens by the width the extruded side walls project to.</p></div>
+  <div class="ba"><figure><img src="img3/qb-code.jpg"><div class="lbl">Before · 2D · 24.2 s</div></figure><figure><img src="img3/qa-code.jpg"><div class="lbl">Final · 2D · 24.2 s</div></figure>
+    <p class="small" style="margin:0"><b>Grey on grey.</b> CODE’s selection highlights faded out with transparency, which mixed butter and ink into murky greys for several frames. They now wipe off at full strength, with an ink copy of each glyph clipped inside the moving box, like a text selection being released.</p></div>
+  <div class="ba"><figure><img src="img3/qb-labels.jpg"><div class="lbl">Before · 3D · 8.0 s</div></figure><figure><img src="img3/qa-labels.jpg"><div class="lbl">Final · 3D · 8.0 s</div></figure>
+    <p class="small" style="margin:0"><b>Labels under the M.</b> The MAKE guide labels lived in the 3D scene, so the M covered them as the camera drifted, and the ink tubes had lost their round joints. The labels are now drawn flat over the frame, each placed where its guide line lands on screen, and the joints are back.</p></div>
+  <div class="ba"><figure><img src="img3/qb-tumble.jpg"><div class="lbl">Before · 3D · 20.8 s</div></figure><figure><img src="img3/qa-tumble.jpg"><div class="lbl">Final · 3D · 20.8 s</div></figure>
+    <p class="small" style="margin:0"><b>Crossed paths.</b> The falling glyphs pivoted at their baselines and their paths crossed, so C, O and D merged mid-air. Each now pivots at its cap-height centre, fans out from the middle and falls at its own depth.</p></div>
+  <div class="folio">25</div>
+</section>

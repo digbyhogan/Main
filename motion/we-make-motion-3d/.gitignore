@@ -1,0 +1,5 @@
+render/out/
+render/out-*/
+*-4k.mp4
+render/*.log
+*-master.mp4

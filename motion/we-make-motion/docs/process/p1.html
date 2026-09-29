@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>We Make Motion* — Process</title>
+<style>
+  @font-face { font-family: 'Unbounded'; font-weight: 900; src: url(../../render/fonts/Unbounded-latin-Yq6F-LOTXC.woff2) format('woff2'); }
+  @font-face { font-family: 'Martian Mono'; font-weight: 100 800; src: url(../../render/fonts/MartianMono-latin-2V0PKIcADo.woff2) format('woff2'); }
+  @font-face { font-family: 'Bodoni Moda'; font-style: normal; font-weight: 400 700; src: url(fonts/BodoniModa-normal-latin.woff2) format('woff2'); }
+  @font-face { font-family: 'Bodoni Moda'; font-style: italic; font-weight: 400; src: url(fonts/BodoniModa-italic-latin.woff2) format('woff2'); }
+
+  :root {
+    --ink: #111116; --chalk: #F1EFE9; --paper: #F6F4EF; --ultra: #2D2DF5; --flamingo: #FF5A87; --butter: #FFD34E;
+    --muted: #6E6C76; --rule: rgba(17,17,22,.14);
+    --disp: 'Unbounded', 'Arial Black', sans-serif; --serif: 'Bodoni Moda', Georgia, serif; --mono: 'Martian Mono', 'DejaVu Sans Mono', monospace;
+  }
+  @page { size: 297mm 210mm; margin: 0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #888; }
+  body { font-family: var(--serif); font-size: 10.2pt; line-height: 1.5; color: var(--ink); -webkit-print-color-adjust: exact; print-color-adjust: exact; font-optical-sizing: auto; }
+  .page { width: 297mm; height: 210mm; padding: 15mm 16mm 13mm; position: relative; overflow: hidden; background: var(--paper); break-after: page; page-break-after: always; display: flex; flex-direction: column; }
+  .page.dark { background: var(--ink); color: var(--chalk); }
+  .page.blue { background: var(--ultra); color: var(--chalk); }
+  .run { display: flex; justify-content: space-between; font: 400 6.6pt/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8mm; }
+  .dark .run, .blue .run { color: rgba(241,239,233,.6); }
+  .folio { position: absolute; right: 16mm; bottom: 8mm; font: 400 6.6pt/1 var(--mono); color: var(--muted); letter-spacing: .08em; }
+  .dark .folio, .blue .folio { color: rgba(241,239,233,.6); }
+  h1, h2, h3 { margin: 0; font-weight: 900; text-wrap: balance; }
+  h2 { font-family: var(--disp); font-size: 21pt; line-height: 1.1; letter-spacing: -.01em; margin-bottom: 5mm; }
+  h2 i { font-style: normal; color: var(--flamingo); }
+  h3 { font-family: var(--mono); font-weight: 700; font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase; margin: 0 0 2mm; color: var(--ink); }
+  .dark h3, .blue h3 { color: var(--chalk); }
+  p { margin: 0 0 2.6mm; max-width: 68ch; }
+  .lede { font-size: 13pt; line-height: 1.42; max-width: 58ch; }
+  .it { font-style: italic; }
+  .mono, code, pre { font-family: var(--mono); }
+  code { font-size: 7.6pt; background: rgba(17,17,22,.06); padding: .2mm 1mm; border-radius: 1mm; }
+  pre { font-size: 6.9pt; line-height: 1.55; background: var(--ink); color: var(--chalk); padding: 4mm 5mm; border-radius: 1.5mm; margin: 0; white-space: pre-wrap; }
+  pre .k { color: #8C8CFF; } pre .n { color: var(--flamingo); } pre .s { color: var(--butter); } pre .c { color: rgba(241,239,233,.5); }
+  .cols { display: grid; gap: 9mm; flex: 1; min-height: 0; }
+  .c2 { grid-template-columns: 1fr 1fr; } .c3 { grid-template-columns: 1fr 1fr 1fr; } .c12 { grid-template-columns: 1fr 1.25fr; } .c21 { grid-template-columns: 1.3fr 1fr; }
+  .small { font-size: 8.8pt; line-height: 1.45; }
+  .cap { font: 400 6.4pt/1.5 var(--mono); color: var(--muted); letter-spacing: .02em; margin-top: 1.6mm; }
+  .dark .cap, .blue .cap { color: rgba(241,239,233,.65); }
+  figure { margin: 0; }
+  figure img { display: block; width: 100%; border-radius: 1mm; }
+  ul.list { margin: 0; padding: 0; list-style: none; }
+  ul.list li { padding: 1.5mm 0; border-top: 1px solid var(--rule); }
+  ul.list li:last-child { border-bottom: 1px solid var(--rule); }
+  .dark ul.list li { border-color: rgba(241,239,233,.14); }
+  ul.list b { font-family: var(--mono); font-size: 7.2pt; letter-spacing: .06em; text-transform: uppercase; font-weight: 700; margin-right: 2mm; }
+  table { border-collapse: collapse; width: 100%; font-size: 8.4pt; }
+  th { font: 700 6.4pt/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; text-align: left; color: var(--muted); padding: 0 3mm 1.5mm 0; border-bottom: 1px solid var(--ink); }
+  td { padding: 1.6mm 3mm 1.6mm 0; border-bottom: 1px solid var(--rule); vertical-align: top; line-height: 1.4; }
+  td.m { font-family: var(--mono); font-size: 7pt; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .num { font-variant-numeric: tabular-nums; }
+  .tag { display: inline-block; font: 700 6pt/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 1.1mm 1.6mm; border-radius: 1mm; background: rgba(17,17,22,.08); margin: 0 1mm 1mm 0; }
+  .dark .tag { background: rgba(241,239,233,.12); }
+  .strips { display: grid; gap: 1.6mm; }
+  .strips img { display: block; width: 100%; aspect-ratio: 2.75; object-fit: cover; border-radius: 1mm; }
+  .strips.tall img { aspect-ratio: 2.5; }
+  .ba { display: grid; grid-template-columns: 58mm 58mm 1fr; gap: 3mm 5mm; align-items: start; padding: 2.2mm 0; border-top: 1px solid var(--rule); }
+  .ba img { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 1mm; }
+  .ba .lbl { font: 700 5.8pt/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-top: 1.2mm; }
+  .dot { display: inline-block; width: .62em; height: .62em; border-radius: 50%; background: var(--flamingo); vertical-align: baseline; }
+</style>
+</head>
+<body>
+
+<!-- 1 · COVER -->
+<section class="page dark" style="padding:16mm 18mm">
+  <div class="run"><span>Process notes</span><span>28 September 2026</span></div>
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center">
+    <div style="font:900 44pt/1 var(--disp); letter-spacing:-.01em">WE MAKE</div>
+    <div style="font:900 96pt/1 var(--disp); letter-spacing:-.015em; margin-top:2mm">MOTION</div>
+    <div style="display:flex; align-items:baseline; gap:6mm; margin-top:4mm">
+      <span style="font:italic 400 58pt/1 var(--serif)">without</span>
+      <span style="font:700 50pt/1 var(--mono)">CODE</span><span style="color:var(--flamingo); font:900 44pt/1 var(--disp); position:relative; top:-18pt">*</span>
+    </div>
+  </div>
+  <div style="display:grid; grid-template-columns:1.4fr 1fr; gap:14mm; align-items:end">
+    <p class="lede" style="color:rgba(241,239,233,.85); margin:0">How a 30-second motion piece and its percussive score were designed, choreographed, synthesised and rendered, from a one-paragraph brief to 4K masters of two editions.</p>
+    <p class="mono" style="font-size:6.8pt; line-height:1.7; letter-spacing:.06em; text-transform:uppercase; color:rgba(241,239,233,.6); margin:0; text-align:right">30 s · 1920×1080 · 60 fps · 120 BPM<br>2D and 3D editions · {{FRAMES}} frames each<br><span style="color:var(--flamingo)">*</span>This document is also code.</p>
+  </div>
+</section>
+
+<!-- 2 · AT A GLANCE -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Overview</span></div>
+  <h2>At a glance</h2>
+  <div class="cols c21">
+    <div>
+      <p class="lede">The brief asked for a sleek, fluid, 30-second motion sequence featuring five words (<b>We, Make, Motion, Without, Code</b>) with percussive sound and distinct effects tied to key moments. The result is a short film that argues its headline for 26 seconds and then footnotes itself.</p>
+      <p>Everything was built in code: a single HTML page draws each frame on a canvas as a pure function of time, and the soundtrack is synthesised from oscillators and filtered noise by the same page. No video editor, no audio workstation, no samples, no stock assets. One cue sheet drives both picture and sound, which is how every bounce, slam and wipe lands on its hit.</p>
+      <h3 style="margin-top:5mm">Deliverables</h3>
+      <ul class="list small">
+        <li><b>Masters</b> <code>we-make-motion-4k.mp4</code> (3840×2160, {{MP44KMB}} MB) and <code>we-make-motion.mp4</code> (1920×1080, {{MP4MB}} MB), 60 fps, H.264, AAC 256 kb/s.</li>
+        <li><b>Interactive player</b> A private claude.ai artifact: real-time playback, waveform scrubber, dope sheet, and a Principles overlay that names the technique on screen.</li>
+        <li><b>Source</b> Repository <code>digbyhogan/main</code>, folder <code>motion/we-make-motion/</code>, with an offline renderer that reproduces the master.</li>
+        <li><b>3D edition</b> <code>we-make-motion-3d-4k.mp4</code> ({{MP43D4KMB}} MB at 24 Mb/s), <code>we-make-motion-3d.mp4</code> (1080p, {{MP43DMB}} MB) and a live WebGL player: the same cut and score with extruded type, glow, grit and mattes.</li>
+        <li><b>This document</b> Approach, workings, and the progression from first pass to final.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>By the numbers</h3>
+      <table class="num">
+        <tr><td>Duration</td><td class="m">30.000 s · 15 bars of 4/4</td></tr>
+        <tr><td>Tempo</td><td class="m">120 BPM · beat = 0.5 s</td></tr>
+        <tr><td>Frames</td><td class="m">{{FRAMES}} at 60 fps</td></tr>
+        <tr><td>Sub-frames rendered for motion blur</td><td class="m">{{SUBFRAMES}} (24 per frame)</td></tr>
+        <tr><td>Scenes</td><td class="m">8</td></tr>
+        <tr><td>Particles forming “WE”</td><td class="m">{{PARTICLES}}</td></tr>
+        <tr><td>Sound sources scheduled</td><td class="m">{{VOICES}} oscillators + noise</td></tr>
+        <tr><td>Samples or recordings used</td><td class="m">0</td></tr>
+        <tr><td>Loudness · peak</td><td class="m">{{LUFS}} LUFS · {{PEAK}} dBFS</td></tr>
+        <tr><td>Colours · typefaces · protagonists</td><td class="m">5 · 3 · 1 dot</td></tr>
+        <tr><td>Lines in the film’s page</td><td class="m">{{LINES}}</td></tr>
+        <tr><td>4K render time (4 CPU cores)</td><td class="m">{{RENDER4KMIN}} min</td></tr>
+      </table>
+      <h3 style="margin-top:6mm">Contents</h3>
+      <p class="small mono" style="font-size:7pt; line-height:1.9; color:var(--muted)">03 Brief · 04 Concept · 05 Design system · 06 Timing · 07 Motion toolkit · 08–11 Scene by scene · 12–13 Sound · 14 Rendering · 15–19 Progression to final · 20–23 The 3D edition · 24–25 Review at scale · 26 Appendix</p>
+    </div>
+  </div>
+  <div class="folio">02</div>
+</section>
+
+<!-- 3 · BRIEF -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>The brief</span></div>
+  <h2>The brief, and the prompt I wrote myself</h2>
+  <div class="cols c2">
+    <div>
+      <h3>What was asked</h3>
+      <p class="it" style="font-size:11.5pt; line-height:1.45; border-left:2px solid var(--flamingo); padding-left:4mm">“Self prompt and create a modernistic, sleek and fluid motion design sequence that really shows off your capabilities, not just in design but in the principles of motion and motion graphics … feature some key words: We, Make, Motion, Without, Code … 30 seconds, a percussive sound and distinctive sound effects that align with key moments.”</p>
+      <h3 style="margin-top:5mm">How I read it</h3>
+      <p>Three things were being tested at once: visual design, the craft of animation (the twelve classic principles and the modern motion-graphics vocabulary), and audio-visual sync. A pretty title sequence would only cover the first. So the piece had to <i>demonstrate</i> principles on screen, legibly, and every one of them had to be timed to sound.</p>
+      <p>The five words also carry an irony: a film saying “without code” that is built entirely from code. I decided to use that rather than hide it. The film makes the claim with full conviction, then adds an asterisk.</p>
+      <h3 style="margin-top:5mm">Assumptions I made instead of asking</h3>
+      <ul class="list small">
+        <li><b>Format</b> 16:9 at 1920×1080 and 60 fps, because fluid motion reads better at 60.</li>
+        <li><b>Output</b> An MP4 master plus a live, scrubbable web version.</li>
+        <li><b>Sound</b> Percussion-led, with tuned accents in C major pentatonic so plucks and pings sit together.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>The self-prompt</h3>
+      <pre><span class="c">// creative brief, written before any code</span>
+Make a 30-second film that says
+<span class="s">"We make motion without code"</span>,
+built entirely from code, and let it notice.
+
+<span class="k">Rules</span>
+1. One protagonist: a flamingo dot. It opens
+   the film, appears in almost every scene,
+   and closes it.
+2. One tempo: 120 BPM. Every cut, hit and
+   transition lands on the 16th-note grid.
+3. One cue sheet: picture and sound read the
+   same timestamps, so sync can't drift.
+4. Every frame is a pure function of time,
+   so it can be scrubbed, rendered offline
+   and motion-blurred without re-simulation.
+5. Each word gets its own motion language:
+   WE assembles, MAKE constructs, MOTION flows,
+   without is still, CODE decodes and collapses.
+6. Show the principles, don't list them.
+7. Restraint: five colours, three typefaces,
+   flamingo belongs to the dot.
+8. End on the joke. Keep it dry.</pre>
+      <p class="cap">The rules above shaped every later decision. Rule 4 is the technical one that everything else depends on. Two rules bend in practice: a few timings sit off the grid (page 6), and flamingo is lent to a few accents, such as MOTION’s beat flashes and the code numerals.</p>
+    </div>
+  </div>
+  <div class="folio">03</div>
+</section>
+
+<!-- 4 · CONCEPT -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Concept &amp; structure</span></div>
+  <h2>A claim in eight beats, and one footnote</h2>
+  <div class="cols c12" style="grid-template-columns: 1fr 1.35fr">
+    <div>
+      <table>
+        <tr><th>Time</th><th>Beat</th><th>Motion language</th></tr>
+        <tr><td class="m">0:00</td><td><b>The drop</b></td><td>A dot falls and bounces. The film introduces its protagonist and its tempo.</td></tr>
+        <tr><td class="m">0:02</td><td><b>WE</b></td><td>One becomes many: mitosis, then a particle swarm that assembles the word.</td></tr>
+        <tr><td class="m">0:06</td><td><b>MAKE</b></td><td>Construction: a grid, measurements, letters drawn stroke by stroke.</td></tr>
+        <tr><td class="m">0:10</td><td><b>MOTION</b></td><td>Flow, then excess: a wave, a marquee, a build that collapses to a line.</td></tr>
+        <tr><td class="m">0:16</td><td><b>without</b></td><td>Absence: silence, stillness, a thin serif. The camera dives into the ink.</td></tr>
+        <tr><td class="m">0:18</td><td><b>CODE</b></td><td>Decoded, struck through, dropped.</td></tr>
+        <tr><td class="m">0:22</td><td><b>The claim</b></td><td>All five words, each entering with its own verb.</td></tr>
+        <tr><td class="m">0:26</td><td><b>The fine print</b></td><td>The full stop becomes an asterisk. The footnote types itself.</td></tr>
+      </table>
+      <p class="small" style="margin-top:4mm">The dot is in almost every scene: it drops and bounces, splits into the particles, lands in the counter of the A, surfs the wave, becomes the tittle of the <span class="it">i</span>, returns as the full stop, turns into the asterisk, and finally shrinks back to its opening size and blinks out at the centre of the frame.</p>
+    </div>
+    <div style="display:flex; flex-direction:column">
+      <h3>Energy across the film</h3>
+      {{ENERGY_SVG}}
+      <p class="cap">Momentary loudness of the final soundtrack (EBU R128, 400 ms window) sampled every 100 ms. Shaded bands are the eight scenes. The shape is deliberate: two builds, a sharp dip at 16 s, a second act, a hush, and one last hit at 29 s before a short fade.</p>
+    </div>
+  </div>
+  <div class="folio">04</div>
+</section>
+
+<!-- 5 · DESIGN SYSTEM -->
+<section class="page">
+  <div class="run"><span>We Make Motion* — Process</span><span>Design system</span></div>
+  <h2>Five colours, three typefaces, one dot</h2>
+  <div class="cols c2">
+    <div>
+      <h3>Palette</h3>
+      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:2mm; margin-bottom:3mm">
+        <div style="background:#111116; height:22mm; border-radius:1mm"></div>
+        <div style="background:#F1EFE9; height:22mm; border-radius:1mm; box-shadow: inset 0 0 0 1px var(--rule)"></div>
+        <div style="background:#2D2DF5; height:22mm; border-radius:1mm"></div>
+        <div style="background:#FF5A87; height:22mm; border-radius:1mm"></div>
+        <div style="background:#FFD34E; height:22mm; border-radius:1mm"></div>
+      </div>
+      <table class="small">
+        <tr><td class="m">Ink #111116</td><td>Dark ground (drop, WE, CODE, fine print) and type on light scenes. Slightly blue-black, never pure black.</td></tr>
+        <tr><td class="m">Chalk #F1EFE9</td><td>Light ground (MAKE, without) and type on dark and blue scenes. Warm off-white.</td></tr>
+        <tr><td class="m">Ultramarine #2D2DF5</td><td>The loud ground: MOTION and the claim. Electric, close to International Klein Blue.</td></tr>
+        <tr><td class="m">Flamingo #FF5A87</td><td>The dot and its deeds: echo trails, the strike-through, the asterisk. Lent out for a few accents: MOTION’s beat flashes, code numerals, glitch bars.</td></tr>
+        <tr><td class="m">Butter #FFD34E</td><td>Code only: brackets, selection highlights, the caret.</td></tr>
+      </table>
+      <p class="small" style="margin-top:3mm">I avoided the common defaults (near-black with a single acid accent, cream with terracotta). Three grounds alternate scene to scene, giving the cut rhythm a colour rhythm too: ink → ink → chalk → ultramarine → chalk → ink → ultramarine → ink.</p>
+    </div>
+    <div>
+      <h3>Typography</h3>
+      <div style="border-top:1px solid var(--rule); padding:2.5mm 0">
+        <div style="font:900 30pt/1 var(--disp)">MOTION</div>
+        <p class="small" style="margin:1.5mm 0 0"><b>Unbounded 900</b>. Wide, geometric and heavy. The shouting voice: WE, MOTION, the claim.</p>
+      </div>
+      <div style="border-top:1px solid var(--rule); padding:2.5mm 0">
+        <div style="font:italic 400 34pt/1 var(--serif)">without</div>
+        <p class="small" style="margin:1.5mm 0 0"><b>Bodoni Moda Italic</b>. A high-contrast Didone whisper. Used for one word only, so the contrast lands like a change of tone of voice.</p>
+      </div>
+      <div style="border-top:1px solid var(--rule); border-bottom:1px solid var(--rule); padding:2.5mm 0">
+        <div style="font:700 26pt/1 var(--mono)">&lt;CODE/&gt;</div>
+        <p class="small" style="margin:1.5mm 0 0"><b>Martian Mono</b>. A wide monospace that rhymes with Unbounded’s proportions. CODE, the source code backdrop, the HUD and the footnote.</p>
+      </div>
+      <p class="small" style="margin-top:3mm"><b>MAKE</b> uses none of them: its letters are a custom monoline alphabet built from 13 stroke segments with round caps and joins, so they can be drawn on like a pen.</p>
+      <p class="small">A thin <b>HUD slate</b> frames most scenes: chapter label, tempo, running SMPTE timecode, bar number and a four-square beat indicator, so the viewer can literally see the beat.</p>
+    </div>
+  </div>
+  <div class="folio">05</div>
+</section>
